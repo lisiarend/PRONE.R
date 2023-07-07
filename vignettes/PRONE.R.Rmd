@@ -36,8 +36,8 @@ knitr::opts_chunk$set(
 ### Example 1: TMT Data Set
 
 ```{r}
-data <- read.csv("../inst/extdata/real_world/proteinGroups_harmonized_plasma.csv", row.names = 1)
-md <- read.csv("../inst/extdata/real_world/metadata_plasma.csv", row.names = 1)
+data <- read.csv("../inst/extdata/real_world/TMT/proteinGroups_harmonized_plasma.csv", row.names = 1)
+md <- read.csv("../inst/extdata/real_world/TMT/metadata_plasma.csv", row.names = 1)
 
 ref_samples <- md[md$Condition == "ref",]$Column
 
@@ -46,4 +46,27 @@ se <- load_data(data, md, protein_column = "Protein.IDs", gene_column = "Gene.na
 ```
 
 ### Example 2: LFQ Data Set
+
+```{r}
+
+#data <- read.csv("../inst/extdata/real_world/LFQ/MOUSE-Data-NonNormalized.csv", row.names = 1)
+
+# Create metadata (since it was not given)
+#md <- data.frame(Column = colnames(data)[1:(ncol(data)-2)])
+#md$Animal <- sapply(strsplit(as.character(md$Column),"_"), "[", 1)
+#md$Condition <- sapply(strsplit(as.character(md$Column),"_"), "[", 2)
+
+#se <- load_data(data, md, protein_column = "Accession", gene_column = NULL, ref_samples = NULL, batch_column = NULL, condition_column = "Condition", label_column = NULL)
+```
+
+
+## Overview of the Data {-}
+
+```{r}
+
+
+```
+
+
+
 

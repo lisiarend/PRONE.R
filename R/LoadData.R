@@ -23,7 +23,7 @@ load_data <- function(data, md, protein_column = "Protein.IDs", gene_column = "G
   raw[raw == 0] <- NA
   log2 <- log2(raw)
   # rowData
-  rowData <- data[, !md$Column, with = FALSE]
+  rowData <- data[, !colnames(data) %in% md$Column, with = FALSE]
   rowData$IDs <- rownames(raw)
   rowData <- rowData %>% dplyr::rename("Protein.IDs" = protein_column, "Gene.Names" = gene_column)
   # colData
