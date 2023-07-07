@@ -63,10 +63,51 @@ se <- load_data(data, md, protein_column = "Protein.IDs", gene_column = "Gene.na
 ## Overview of the Data {-}
 
 ```{r}
+get_NA_overview(se, ain = "log2")
+```
 
+```{r}
+plot_condition_overview(se, condition = NULL)
+
+plot_condition_overview(se, condition = "Batch")
 
 ```
 
 
+## Filter Proteins {-}
 
+### Remove Proteins With Missing Values in ALL Samples
+
+```{r}
+se <- filter_complete_NA_proteins(se)
+```
+
+### Remove Proteins With a Specific Value in a Specific Column
+
+Typically proteins with "+" in the columns "Reverse", "Only.identified.by.site", and "Potential.contaminant" are removed in case of a MaxQuant proteinGroups.txt output file.
+
+```{r}
+se <- filter_proteins_by_value(se, "Reverse", "+")
+se <- filter_proteins_by_value(se, "Potential.contaminant", "+")
+se <- filter_proteins_by_value(se, "Only.identified.by.site", "+")
+```
+
+
+## Explore Missing Value Pattern
+
+```{r}
+
+plot_NA_heatmap(se, color_by = NULL, label_by = NULL, cluster_samples = TRUE, cluster_proteins = TRUE)
+
+plot_NA_heatmap(se, color_by = "Batch", label_by = "No", cluster_samples = TRUE, cluster_proteins = TRUE)
+
+```
+
+```{r}
+plot_NA_density(se)
+```
+
+```{r}
+plot_NA_frequency(se)
+```
 

@@ -6,10 +6,15 @@ Authors@R: c(person("Lis", "Arend", email = "lisiarend@me.com", role = c("aut", 
 Description: Package for normalization of proteomics data using different methods and functions for the evaluation of these methods are provided.
 License: GPL (>=3)
 Depends: R (>= 4.0.0)
-Imports: dplyr,
-         SummarizedExperiment,
-         magrittr,
-         data.table
+Imports: 
+    dplyr,
+    SummarizedExperiment,
+    magrittr,
+    data.table,
+    RColorBrewer,
+    ggplot2,
+    S4Vectors,
+    ComplexHeatmap
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3

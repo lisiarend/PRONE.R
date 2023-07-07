@@ -1,5 +1,5 @@
 
-#' Load Proteomics Data Into a SummarizedExperiment
+#' Load proteomics data into a SummarizedExperiment
 #'
 #' @param data tabular data table with rows = proteins and columns = samples (such as proteinGroups.txt of MaxQuant)
 #' @param md experimental design table (requires a column named "Column" for the column names of the sample intensities in data)

@@ -7,7 +7,7 @@
 get_NA_overview(se, ain = "log2")
 }
 \arguments{
-\item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
+\item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
 
 \item{ain}{String which data type should be used (default raw)}
 }
