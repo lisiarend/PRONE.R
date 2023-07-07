@@ -1,0 +1,49 @@
+---
+title: "PRONE.R - Proteomics Normalization Evaluater"
+author: Arend Lis
+
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{PRONE.R}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+## Introduction {-}
+
+
+## Installation {-}
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>", eval = FALSE
+)
+```
+
+```{r loading, include=TRUE, warning=FALSE, message=FALSE}
+  # Install PRONE.R from github and build vignettes
+  if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+  devtools::install_github("lisiarend/PRONE.R", build_vignettes = TRUE, dependencies = TRUE)
+  # Load and attach PRONE.R 
+  library("PRONE.R")
+```
+
+
+## Load Data {-}
+
+
+### Example 1: TMT Data Set
+
+```{r}
+data <- read.csv("../inst/extdata/real_world/proteinGroups_harmonized_plasma.csv", row.names = 1)
+md <- read.csv("../inst/extdata/real_world/metadata_plasma.csv", row.names = 1)
+
+ref_samples <- md[md$Condition == "ref",]$Column
+
+se <- load_data(data, md, protein_column = "Protein.IDs", gene_column = "Gene.names", ref_samples = ref_samples, batch_column = "Batch", condition_column = "Condition", label_column = "Label")
+
+```
+
+### Example 2: LFQ Data Set
+
