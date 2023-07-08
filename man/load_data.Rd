@@ -2,7 +2,7 @@
 % Please edit documentation in R/LoadData.R
 \name{load_data}
 \alias{load_data}
-\title{Load Proteomics Data Into a SummarizedExperiment}
+\title{Load proteomics data into a SummarizedExperiment}
 \usage{
 load_data(
   data,
@@ -36,5 +36,5 @@ load_data(
 SummarizedExperiment object
 }
 \description{
-Load Proteomics Data Into a SummarizedExperiment
+Load proteomics data into a SummarizedExperiment
 }

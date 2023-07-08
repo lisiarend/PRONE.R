@@ -110,4 +110,27 @@ plot_NA_density(se)
 ```{r}
 plot_NA_frequency(se)
 ```
+## Filter Proteins By Applying a Missing Value Threshold
 
+
+```{r}
+se <- filter_NA_proteins_by_threshold(se, thr = 0.7) 
+
+plot_NA_heatmap(se)
+```
+
+
+## Filter Samples {-}
+
+
+### Quality Control
+
+```{r}
+
+plot_nr_prot_samples(se, color_by = NULL, label_by = NULL)
+
+plot_nr_prot_samples(se, color_by = "Batch", label_by = "No")
+
+plot_nr_prot_samples(se, color_by = "No", label_by = "No")
+
+```

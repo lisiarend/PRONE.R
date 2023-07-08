@@ -13,7 +13,9 @@ filter_complete_NA_proteins <- function(se){
   row_idx_no_NA <- rowSums(is.na(dt)) != ncol(dt)
   # subset SummarizedExperiment
   se_subset <- se[row_idx_no_NA,]
-  if(nrow(se_subset) == nrow(se)){
+  if(nrow(se_subset) == 0){
+    stop("All proteins would be removed. Aborted!")
+  } else if(nrow(se_subset) == nrow(se)){
     message("No proteins were removed.")
   } else{
     rm <- nrow(se) - nrow(se_subset)
@@ -35,9 +37,11 @@ filter_complete_NA_proteins <- function(se){
 filter_proteins_by_value <- function(se, column_name = "Reverse", values = c("+")){
   rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
   if(column_name %in% colnames(rd)){
-    rd_subset <- rd[! rd[, get(column_name)] %in% c(values),]
+    rd_subset <- rd[! rd[, column_name] %in% c(values),]
     se_subset <- se[rd_subset$ID, ]
-    if(nrow(se_subset) == nrow(se)){
+    if(nrow(se_subset) == 0){
+      stop("All proteins would be removed. Aborted!")
+    } else if(nrow(se_subset) == nrow(se)){
       message("No proteins were removed.")
     } else{
       rm <- nrow(se) - nrow(se_subset)
@@ -71,7 +75,7 @@ filter_NA_proteins_by_threshold <- function(se, thr = 0.8){
 
   # filter data
   nr_samples <- dim(se)[2]
-  keep <- bin_dt %>% dplyr::group_by(get("ID")) %>% dplyr::summarise(miss_val = dplyr::n() - sum(get("Intensity")), valid_val = sum(get("Intensity"))) %>% dplyr::filter(get("valid_val") >= thr * nr_samples)
+  keep <- bin_dt %>% dplyr::group_by(ID) %>% dplyr::summarise(miss_val = dplyr::n() - sum(Intensity), valid_val = sum(Intensity)) %>% dplyr::filter(valid_val >= thr * nr_samples)
 
   # get indices of keep proteins
   rowdata <- data.table::as.data.table(SummarizedExperiment::rowData(se))
@@ -79,7 +83,9 @@ filter_NA_proteins_by_threshold <- function(se, thr = 0.8){
 
   se_subset <- se[rowdata$IDs,]
   rm <- nrow(se) - nrow(se_subset)
-  if (rm == 0){
+  if(nrow(se_subset) == 0){
+    stop("All proteins would be removed. Aborted!")
+  } else if (rm == 0){
     message("No proteins were removed.")
   } else{
     message(paste0(rm, " proteins were removed."))
@@ -99,6 +105,7 @@ filter_NA_proteins_by_threshold <- function(se, thr = 0.8){
 #' @param cluster_proteins Boolean. TRUE if proteins should be clustered, else FALSE.
 #' @param show_row_dend Boolean. TRUE if row dendrogram should be shown.
 #' @param show_column_dend Boolean. TRUE if column dendrogram should be shown.
+#' @importFrom magrittr %>%
 #'
 #' @return ComplexHeatmap plot (only showing proteins with at least one missing value)
 #' @export
@@ -152,7 +159,7 @@ plot_NA_heatmap <- function(se, color_by = NULL, label_by = NULL, cluster_sample
   colnames(dt) <- coldata$Column
 
   if(show_sample_names){
-    colnames(dt) <- coldata[, get(label_by)]
+    colnames(dt) <- coldata[, label_by]
   } else {
     colnames(dt) <- coldata$Column
   }
@@ -160,11 +167,11 @@ plot_NA_heatmap <- function(se, color_by = NULL, label_by = NULL, cluster_sample
   # color vector
   if(!is.null(color_by)){
     # prepare data for color bar
-    annotation_col <- data.table::data.table(color_by = coldata[, get(color_by)])
+    annotation_col <- data.table::data.table(color_by = coldata[, color_by])
     colnames(annotation_col) <- c(color_by)
 
     if(show_sample_names){
-      rownames(annotation_col) <- coldata[, get(label_by)]
+      rownames(annotation_col) <- coldata[, label_by]
     } else {
       rownames(annotation_col) <- coldata$Column
     }
@@ -173,10 +180,10 @@ plot_NA_heatmap <- function(se, color_by = NULL, label_by = NULL, cluster_sample
     col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
     col_vector <- rev(col_vector[54:73])
 
-    condition_colors <- col_vector[1:length(unique(annotation_col[, get(color_by)]))]
-    names(condition_colors) <- unique(annotation_col[, get(color_by)])
+    condition_colors <- col_vector[1:length(unique(annotation_col[, color_by]))]
+    names(condition_colors) <- unique(annotation_col[, color_by])
     annotation_colors <- list(color_by = condition_colors)
-    ha <- ComplexHeatmap::HeatmapAnnotation(color_by = annotation_col[, get(color_by)], col = annotation_colors, annotation_label = c(color_by))
+    ha <- ComplexHeatmap::HeatmapAnnotation(color_by = annotation_col[, color_by], col = annotation_colors, annotation_label = c(color_by))
     # Plot Heatmap
     p <- ComplexHeatmap::Heatmap(as.matrix(dt),
                                  name = "Value Type",
@@ -222,7 +229,7 @@ plot_NA_density <- function(se){
   stat <- melted_dt %>% dplyr::group_by(get("ID")) %>% dplyr::summarize(mean = mean(get("Intensity"), na.rm = TRUE), Type = any(is.na(get("Intensity"))))
   stat$Type[stat$Type == TRUE] <- "Missing Value"
   stat$Type[stat$Type == FALSE] <- "Valid Value"
-  p <- ggplot2::ggplot(stat, ggplot2::aes(mean, col=Type)) +
+  p <- ggplot2::ggplot(stat, ggplot2::aes(mean, col=get("Type"))) +
     ggplot2::geom_density(na.rm=TRUE) +
     ggplot2::labs(x = "Log2 Intensity", y="Density") +
     ggplot2::scale_colour_manual(name="Value Type", values = c("#A92C23", "#345995"))
@@ -247,7 +254,7 @@ plot_NA_frequency <- function(se){
   stat <- melted_dt %>% dplyr::mutate(bin = ifelse(is.na(get("Intensity")),0,1)) %>% dplyr::group_by(get("ID")) %>% dplyr::summarize(sum = sum(get("bin")))
   table <- table(stat$sum) %>% data.table::as.data.table()
   table <- table %>% dplyr::mutate(V1 = factor(table$V1, levels=seq(0,nr_samples)))
-  p <- ggplot2::ggplot(table, ggplot2::aes(x=V1, y=N)) +
+  p <- ggplot2::ggplot(table, ggplot2::aes(x=get("V1"), y=get("N"))) +
     ggplot2::geom_col() +
     ggplot2::labs(title="", x = "Identified in Number of Samples", y="Number of Proteins")
   return(p)

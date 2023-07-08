@@ -2,7 +2,7 @@
 % Please edit documentation in R/GetOverview.R
 \name{get_NA_overview}
 \alias{get_NA_overview}
-\title{Function Returning Some Values on the Numbers of NA in the data}
+\title{Function returning some values on the numbers of NA in the data}
 \usage{
 get_NA_overview(se, ain = "log2")
 }
@@ -15,5 +15,5 @@ get_NA_overview(se, ain = "log2")
 list with total amount of values in the data, amount of NA values, and the percentage of NAs
 }
 \description{
-Function Returning Some Values on the Numbers of NA in the data
+Function returning some values on the numbers of NA in the data
 }
