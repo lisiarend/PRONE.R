@@ -111,39 +111,11 @@ filter_NA_proteins_by_threshold <- function(se, thr = 0.8){
 #' @export
 #'
 plot_NA_heatmap <- function(se, color_by = NULL, label_by = NULL, cluster_samples = TRUE, cluster_proteins = TRUE, show_row_dend = TRUE, show_column_dend = FALSE){
-  # get color_by
-  if(is.null(color_by)){
-    # check if condition in metadata of se
-    if(is.null(S4Vectors::metadata(se)$condition)){
-      color_by <- NULL
-      message("No condition provided. Hence, no color bar added.")
-    } else {
-      color_by <- S4Vectors::metadata(se)$condition
-      message("Condition of SummarizedExperiment used!")
-    }
-  } else if(color_by == "No"){
-    color_by <- NULL
-    message("No color bar added.")
-  }
-
-  # get label_by
-  show_sample_names <- TRUE
-  if(is.null(label_by)){
-    # check if condition in metadata of se
-    if(is.null(S4Vectors::metadata(se)$label)){
-      label_by <- NULL
-      show_sample_names <- FALSE
-      message("No label provided. Hence, no labeling of samples.")
-    } else {
-      label_by <- S4Vectors::metadata(se)$label
-      message("Label of SummarizedExperiment used!")
-    }
-  } else if (label_by == "No") {
-    label_by <- NULL
-    show_sample_names <- FALSE
-    message("No labeling of samples.")
-  }
-
+  # get color and label values
+  color_by <- get_color_value(se, color_by)
+  tmp <- get_label_value(se, label_by)
+  show_sample_names <- tmp[[1]]
+  label_by <- tmp[[2]]
 
   # prepare data --> make values binary (1 = valid value, 0 = missing value)
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[["raw"]])

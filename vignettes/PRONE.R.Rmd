@@ -134,3 +134,139 @@ plot_nr_prot_samples(se, color_by = "Batch", label_by = "No")
 plot_nr_prot_samples(se, color_by = "No", label_by = "No")
 
 ```
+
+
+```{r}
+
+plot_tot_int_samples(se, color_by = "Batch", label_by = "Label")
+
+```
+
+
+### Outlier Detection via POMA R Package
+
+```{r}
+
+poma_res <- detect_outliers_POMA(se, ain = "log2")
+
+poma_res$polygon_plot
+
+poma_res$distance_boxplot
+
+poma_res$outliers
+
+```
+
+To remove the outliers detected via the POMA algorithm, just put the data.table of the detect_outliers_POMA function into the remove_POMA_outliers function.
+
+```{r}
+
+se <- remove_POMA_outliers(se, poma_res$outliers)
+
+```
+
+However, the package also provides the option to remove samples manually. Here, an example:
+
+```{r}
+
+se_test <- remove_samples_manually(se, "Batch", "Batch 1")
+
+```
+
+
+And you can remove the reference samples directly using the function remove_reference_samples. But attention: possibly you need them for normalization!
+
+```{r}
+
+se_test <- remove_reference_samples(se)
+
+```
+
+
+### Normalization
+
+For normalization, there are multiple functions available which can be used to normalize the data. First of all, to know which normalization methods can be applied:
+
+```{r}
+
+get_normalization_methods()
+```
+
+
+You can either use normalize_se by specifying all normalization methods you want to apply on the data. For instance, if you want to perform median, mean, and MAD normalization, just execute this line:
+
+```{r}
+
+se_norm <- normalize_se(se, c("Median", "Mean", "MAD"), combination_pattern = NULL)
+```
+
+
+However, you can directly also add combinations of methods. For instance, if you want to perform Median on IRS-normalized data on top:
+
+```{r}
+
+se_norm <- normalize_se(se, c("Median", "Mean", "MAD", "Median_on_IRS"), combination_pattern = "_on_")
+
+```
+
+The combination pattern specifies which method to apply on top of the specified normalized data.
+
+#### Qualitative Evaluation
+
+##### Boxplots of Normalized Data
+
+```{r}
+plot_boxplot(se_norm, ain = NULL, color_by = NULL, label_by = NULL, ncol = 3, facet_norm = TRUE)
+```
+But you can also just plot a selection of normalization methods and color for instance by batch:
+
+```{r}
+plot_boxplot(se_norm, ain = c("IRS", "Median"), color_by = "Batch", label_by = NULL, facet_norm = TRUE)
+```
+
+Another option that you have is to return the boxplots for each normalized data independently as a single ggplot object. For this, you need to set facet = FALSE:
+
+```{r}
+plot_boxplot(se_norm, ain = c("IRS", "Median"), color_by = "Batch", label_by = NULL, facet_norm = FALSE)
+```
+#### Densities of Normalized Data
+
+Similarly you can visualize the densities of the normalized data.
+
+```{r}
+plot_densities(se_norm, ain = c("Median", "Median_on_IRS"), color_by = NULL, facet_norm = TRUE)
+```
+
+#### PCA of Normalized Data
+
+Furthermore, you can visualize the normalized data in a PCA plot. Here you have some more arguments that can be changed. If you decide to visualize the methods in independent plots (facet_norm = FALSE), then a list of ggplot objects is returned. However, you have the additional option to facet by any other column of the metadata (using the facet_by parameter). Here an example:
+
+```{r}
+plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = "Timepoint", label_by = "No", shape_by = "Batch", facet_norm = FALSE, facet_by = "Group")
+```
+Or you can simply plot the PCA of the normalized data next to each other. However, the facet_by argument can then not be used. Reminder, by setting color_by = NULL, it will be first checked if a condition has been set in the SummarizedExperiment during loading the data. 
+
+```{r}
+plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = NULL, label_by = "No", shape_by = "Batch", facet_norm = TRUE)
+```
+
+
+### Quantitative Evaluation
+
+#### Intragroup Correlation
+
+```{r}
+plot_intragroup_correlation(se, ain = NULL, condition = NULL, method = "pearson")
+```
+
+#### Intragroup PCV
+
+You have two options to visualize intragroup pooled coefficient of variation. You can either simply generate boxplots of intragroup PCVs of each normalization method (diff = FALSE), or you can visualize the reduction of intragroup PCV of each normalization method compared to log2 (diff = TRUE).
+
+```{r}
+plot_intragroup_PCV(se, ain = NULL, condition = NULL, diff = FALSE)
+```
+
+```{r}
+plot_intragroup_PCV(se, ain = NULL, condition = NULL, diff = TRUE) # TODO: what to do with raw? + ylab?
+```

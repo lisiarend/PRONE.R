@@ -14,7 +14,24 @@ Imports:
     RColorBrewer,
     ggplot2,
     S4Vectors,
-    ComplexHeatmap
+    ComplexHeatmap,
+    POMA, 
+    stringr,
+    RobNorm,
+    NormalyzerDE,
+    tibble,
+    limma,
+    MASS,
+    MatrixGenerics,
+    edgeR,
+    matrixStats,
+    preprocessCore,
+    stats,
+    RcmdrMisc,
+    gtools,
+    methods,
+    ROTS,
+    DEqMS
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3

@@ -27,16 +27,7 @@ get_NA_overview <- function(se, ain="log2"){
 #'
 plot_condition_overview <- function(se, condition = NULL){
   # get condition
-  if(is.null(condition)){
-    # check if condition in metadata of se
-    if(is.null(S4Vectors::metadata(se)$condition)){
-      # print error
-      stop("No condition provided!")
-    } else {
-      condition <- S4Vectors::metadata(se)$condition
-      message("Condition of SummarizedExperiment used!")
-    }
-  }
+  condition <- get_condition_value(se, condition)
 
   # prepare data
   md <- data.table::as.data.table(SummarizedExperiment::colData(se))

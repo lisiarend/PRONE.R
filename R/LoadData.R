@@ -28,6 +28,32 @@ load_data <- function(data, md, protein_column = "Protein.IDs", gene_column = "G
   rowData <- rowData %>% dplyr::rename("Protein.IDs" = protein_column, "Gene.Names" = gene_column)
   # colData
   colData <- md
+
+  # check if ref samples in data
+  if(!is.null(ref_samples)){
+    if(length(c(ref_samples) %in% colData$Column) != length(c(ref_samples))){
+      stop("Reference samples not all included in data. Aborted!")
+    }
+  }
+  # check if batch column in data
+  if(!is.null(batch_column)){
+    if(!batch_column %in% colnames(colData)){
+      stop("Batch column not in the data. Aborted!")
+    }
+  }
+  # check if label column in the data
+  if(!is.null(label_column)){
+    if(!label_column %in% colnames(colData)){
+      stop("Label column not in the data. Aborted!")
+    }
+  }
+  # check if condition column in the data
+  if(!is.null(condition_column)){
+    if(!condition_column %in% colnames(colData)){
+      stop("Condition column not in the data. Aborted!")
+    }
+  }
+
   # metadata
   metadata <- list(condition = condition_column, batch = batch_column, refs = ref_samples, label = label_column)
   # SummarizedExperiment
