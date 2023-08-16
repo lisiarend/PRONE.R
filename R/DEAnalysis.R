@@ -14,10 +14,10 @@ specify_comparisons <- function(se, condition = NULL, sep = NULL, control = NULL
   condition <- get_condition_value(se, condition)
 
   # get condition vector
-  condition_vector <- SummarizedExperiment::colData(se)[[condition]]
+  condition_vector <- unique(SummarizedExperiment::colData(se)[[condition]])
 
   comparisons <- c()
-  for(index_a in 1:length(condition_vector)-1){
+  for(index_a in 1:(length(condition_vector)-1)){
     for(index_b in (index_a+1):length(condition_vector)){
       sample_a <- condition_vector[index_a]
       sample_b <- condition_vector[index_b]
@@ -27,13 +27,15 @@ specify_comparisons <- function(se, condition = NULL, sep = NULL, control = NULL
         comparisons <- c(comparisons, paste0(sample_b, "-", sample_a))
       } else {
         # check if a or b are controls
-        if((sample_a == control) || (sample_b == control)){
-          next
+        if(!is.null(control)){
+          if((sample_a == control) || (sample_b == control)){
+            next
+          }
         }
 
         # check of how many individual groups the condition is composed
-        splits_a <- length(stringr::str_split(sample_a, sep)[[1]])
-        splits_b <- length(stringr::str_split(sample_b, sep)[[1]])
+        splits_a <- stringr::str_split(sample_a, sep)[[1]]
+        splits_b <- stringr::str_split(sample_b, sep)[[1]]
         must_match <- length(splits_a) - 1 # one group should stay variable
 
         # check how many groups are the same --> n - 1 groups need to be the same to add the comparison
@@ -169,7 +171,7 @@ extract_limma_DE <- function(fit, comparisons, logFC = TRUE, logFC_up = 1, logFC
 #' @return Data table with DE results
 #' @export
 #'
-perform_ROTS <- function(data, condition, comparisons, condition_name, coldata, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B =100, K = 500){
+perform_ROTS <- function(data, condition, comparisons, condition_name, coldata, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B =100, K = 500){ # TODO: p_adj_method
   de_res <- NULL
   for (comp in comparisons){
     # extract data of comparison
@@ -291,7 +293,7 @@ spectraCounteBayes_DEqMS <- function(fit, coef_col){
 #' @return data.table of DE results
 #' @export
 #'
-perform_DEqMS <- function(fit, se, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05){
+perform_DEqMS <- function(fit, se, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05){ #TODO: p_adj_method
   prot <- rownames(fit$coefficients)
   rowdata <- data.table::as.data.table(SummarizedExperiment::rowData(se))
   PSMs <- data.frame("Razor + unique peptides" = rowdata$Razor...unique.peptides)
@@ -337,66 +339,12 @@ perform_DEqMS <- function(fit, se, logFC = TRUE, logFC_up = 1, logFC_down = -1, 
   return(data.table::as.data.table(DEqMS_results))
 }
 
-#' Check parameters for DE analysis
-#'
-#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
-#' @param ain Vector of strings which assay should be used as input (default NULL).
-#'            If NULL then all normalization of the se object are plotted next to each other.
-#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
-#' @param comparisons Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)
-#' @param DE_method String specifying which DE method should be applied (limma, ROTS, DEqMS)
-#' @param covariate String specifying which column to include as covariate into limma
-#' @param logFC Boolean specifying whether to apply a logFC threshold (TRUE) or not (FALSE)
-#' @param logFC_up Upper log2 fold change threshold (dividing into up regulated)
-#' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
-#' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
-#' @param alpha Threshold for adjusted p-values or p-values
-#' @param p_adj_method String specifying the method for adjusted p-values
-#' @param B Number of bootstrapping for ROTS
-#' @param K Number of top-ranked features for reproducibility optimization
-#'
-#' @return list of checked assays and condition column name
-#' @export
-#'
-check_DE_parameters <- function(se, ain = NULL, condition = NULL, comparisons = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
-  # check input parameters
-  stopifnot(DE_method %in% c("limma", "ROTS", "DEqMS"))
-  stopifnot(p_adj_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY","fdr", "none")) # TODO: check which values available
-  stopifnot(methods::is(logFC_up, "numeric"))
-  stopifnot(methods::is(logFC_down, "numeric"))
-  stopifnot(methods::is(B, "numeric"))
-  stopifnot(methods::is(K, "numeric"))
-  stopifnot(methods::is(alpha, "numeric"))
-  stopifnot(methods::is(p_adj, "logical"))
-  stopifnot(methods::is(logFC, "logical"))
-
-  # check covariate
-  if(!is.null(covariate)){
-    if(!covariate %in% colnames(data.table::as.data.table(SummarizedExperiment::colData(se)))){
-      stop(paste0("No column named ", covariate, " in SummarizedExperiment!"))
-    }
-  }
-
-  # check comparisons
-  # TODO
-
-  # get condition
-  condition <- get_condition_value(se, condition)
-
-  # check input
-  ain <- check_input_assays(se, ain)
-  if(is.null(ain)){
-    return(NULL)
-  }
-  return(list("ain" = ain, "condition" = condition))
-}
-
 #' Run DE analysis on a single normalized data set
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
 #' @param method String specifying which assay should be used as input
-#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
 #' @param comparisons Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)
+#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
 #' @param DE_method String specifying which DE method should be applied (limma, ROTS, DEqMS)
 #' @param covariate String specifying which column to include as covariate into limma
 #' @param logFC Boolean specifying whether to apply a logFC threshold (TRUE) or not (FALSE)
@@ -411,18 +359,20 @@ check_DE_parameters <- function(se, ain = NULL, condition = NULL, comparisons = 
 #' @return Data table of DE results
 #' @export
 #'
-run_DE_single <- function(se, method, condition = NULL, comparisons = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
+run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
   # check parameters (if users are calling this function instead of run_DE)
   params <- check_DE_parameters(se, ain = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha, B = B, K = K)
   method <- params[["ain"]]
   condition <- params[["condition"]]
 
   # get covariate
-  covariate <- SummarizedExperiment::colData(se)[[covariate]]
+  if(!is.null(covariate)){
+    covariate <- SummarizedExperiment::colData(se)[[covariate]]
+  }
 
   # prepare data
-  dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[method]])
-  row.names(dt) <- data.table::as.data.table(SummarizedExperiment::rowData(se))$Protein.IDs
+  dt <- as.data.frame(SummarizedExperiment::assays(se)[[method]])
+  rownames(dt) <- data.table::as.data.table(SummarizedExperiment::rowData(se))$Protein.IDs
   dt <- dt[rowSums(is.na(dt)) != ncol(dt), ] # remove complete NAs
   condition_vector <- SummarizedExperiment::colData(se)[[condition]]
 
@@ -444,7 +394,7 @@ run_DE_single <- function(se, method, condition = NULL, comparisons = NULL, DE_m
   de_chunk$Assay <- method
   de_chunk$Protein.IDs <- de_chunk$ID
   de_chunk$ID <- NULL
-  de_chunk <- de_chunk[, c("Protein.IDs", "logFC", "P.Value", "adj.P.Val", "Change", "Comparison")]
+  de_chunk <- de_chunk[, c("Protein.IDs", "logFC", "P.Value", "adj.P.Val", "Change", "Comparison", "Assay")]
 
   # add missing proteins (that could not be calculated)
   rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
@@ -475,10 +425,10 @@ run_DE_single <- function(se, method, condition = NULL, comparisons = NULL, DE_m
 #' Run DE analysis of a selection of normalized data sets
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param comparisons Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)
 #' @param ain Vector of strings which assay should be used as input (default NULL).
 #'            If NULL then all normalization of the se object are plotted next to each other.
 #' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
-#' @param comparisons Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)
 #' @param DE_method String specifying which DE method should be applied (limma, ROTS, DEqMS)
 #' @param covariate String specifying which column to include as covariate into limma
 #' @param logFC Boolean specifying whether to apply a logFC threshold (TRUE) or not (FALSE)
@@ -493,7 +443,7 @@ run_DE_single <- function(se, method, condition = NULL, comparisons = NULL, DE_m
 #' @return Data table of DE results of selected normalized data sets
 #' @export
 #'
-run_DE <- function(se, ain = NULL, condition = NULL, comparisons = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
+run_DE <- function(se, comparisons, ain = NULL, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
   # check parameters
   params <- check_DE_parameters(se, ain = ain, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha, B = B, K = K)
   ain <- params[["ain"]]
@@ -513,3 +463,66 @@ run_DE <- function(se, ain = NULL, condition = NULL, comparisons = NULL, DE_meth
   }
   return(de_res)
 }
+
+
+#' Apply other thresholds to DE results
+#'
+#' @param de_res data table resulting of run_DE
+#' @param logFC Boolean specifying whether to apply a logFC threshold (TRUE) or not (FALSE)
+#' @param logFC_up Upper log2 fold change threshold (dividing into up regulated)
+#' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
+#' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
+#' @param alpha Threshold for adjusted p-values or p-values
+#'
+#' @return data table updating the Change column with the newly applied thresholds
+#' @export
+#'
+apply_thresholds <- function(de_res, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05){
+  stopifnot("Change" %in% colnames(de_res))
+
+  if(logFC){
+    # logFC
+    if(p_adj){
+      # p.adjust
+      de_res$Change <- ifelse(de_res$logFC >= logFC_up & de_res$adj.P.Val <= alpha, "Up Regulated", ifelse(de_res$logFC <= logFC_down & de_res$adj.P.Val <= alpha, "Down Regulated", "No Change"))
+    } else {
+      # p.value
+      de_res$Change <- ifelse(de_res$logFC >= logFC_up & de_res$P.Value <= alpha, "Up Regulated", ifelse(de_res$logFC <= logFC_down & de_res$P.Value <= alpha, "Down Regulated", "No Change"))
+    }
+  } else {
+    # no logFC
+    if(p_adj){
+      # p.adjust
+      de_res$Change <- ifelse(de_res$adj.P.Val <= alpha, "Significant Change", "No Change")
+    } else {
+      # p.value
+      de_res$Change <- ifelse(de_res$P.Value <= alpha, "Significant Change", "No Change")
+    }
+  }
+  de_res$Change <- as.factor(de_res$Change)
+  return(de_res)
+}
+
+
+
+#' Get overview table of DE results
+#'
+#' @param de_res data table resulting of run_DE
+#'
+#' @return data table of numbers of DE proteins per comparison and per normalization method
+#' @export
+#'
+get_overview_DE <- function(de_res){
+  if("Significant Change" %in% de_res$Change){
+    dt <- de_res %>% dplyr::group_by(Assay, Comparison) %>% dplyr::summarize('Significant Change' = sum(Change == "Significant Change", na.rm=TRUE)) %>% data.table::as.data.table()
+  } else if ("Up Regulated" %in% de_res$Change | "Down Regulated" %in% de_res$Change){
+    dt <- de_res %>% dplyr::group_by(Assay, Comparison) %>% dplyr::summarize('Up Regulated' = sum(Change == "Up Regulated", na.rm=TRUE),
+                                                                                  'Down Regulated' = sum(Change == "Down Regulated", na.rm=TRUE)) %>% data.table::as.data.table()
+  } else {
+    stop("No DE proteins found for any comparison and normalization method!")
+  }
+  dt$Assay <- factor(dt$Assay, levels = unique(de_res$Assay))
+  return(dt)
+}
+
+# TODO: how to handle raw

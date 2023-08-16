@@ -93,7 +93,7 @@ se <- filter_proteins_by_value(se, "Only.identified.by.site", "+")
 ```
 
 
-## Explore Missing Value Pattern
+### Explore Missing Value Pattern
 
 ```{r}
 
@@ -110,7 +110,8 @@ plot_NA_density(se)
 ```{r}
 plot_NA_frequency(se)
 ```
-## Filter Proteins By Applying a Missing Value Threshold
+
+### Filter Proteins By Applying a Missing Value Threshold
 
 
 ```{r}
@@ -183,7 +184,7 @@ se_test <- remove_reference_samples(se)
 ```
 
 
-### Normalization
+## Normalization
 
 For normalization, there are multiple functions available which can be used to normalize the data. First of all, to know which normalization methods can be applied:
 
@@ -211,9 +212,9 @@ se_norm <- normalize_se(se, c("Median", "Mean", "MAD", "Median_on_IRS"), combina
 
 The combination pattern specifies which method to apply on top of the specified normalized data.
 
-#### Qualitative Evaluation
+### Qualitative Evaluation
 
-##### Boxplots of Normalized Data
+#### Boxplots of Normalized Data
 
 ```{r}
 plot_boxplot(se_norm, ain = NULL, color_by = NULL, label_by = NULL, ncol = 3, facet_norm = TRUE)
@@ -256,7 +257,7 @@ plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = NULL, label_by = "No", s
 #### Intragroup Correlation
 
 ```{r}
-plot_intragroup_correlation(se, ain = NULL, condition = NULL, method = "pearson")
+plot_intragroup_correlation(se_norm, ain = NULL, condition = NULL, method = "pearson")
 ```
 
 #### Intragroup PCV
@@ -264,9 +265,66 @@ plot_intragroup_correlation(se, ain = NULL, condition = NULL, method = "pearson"
 You have two options to visualize intragroup pooled coefficient of variation. You can either simply generate boxplots of intragroup PCVs of each normalization method (diff = FALSE), or you can visualize the reduction of intragroup PCV of each normalization method compared to log2 (diff = TRUE).
 
 ```{r}
-plot_intragroup_PCV(se, ain = NULL, condition = NULL, diff = FALSE)
+plot_intragroup_PCV(se_norm, ain = NULL, condition = NULL, diff = FALSE)
 ```
 
 ```{r}
-plot_intragroup_PCV(se, ain = NULL, condition = NULL, diff = TRUE) # TODO: what to do with raw? + ylab?
+plot_intragroup_PCV(se_norm, ain = NULL, condition = NULL, diff = TRUE) # TODO: what to do with raw? + ylab?
 ```
+
+
+
+## Differential Expression Analysis
+
+After having performed normalization and evaluated the different normalization methods via qualitative and quantitative analysis, differential expression analysis can be used to further analyze the differences of the normalization methods.
+
+However before, you need to remove the reference samples in case of a TMT experiment. This can be easily done with the function "remove_reference_samples".
+
+```{r}
+se_norm <- remove_reference_samples(se_norm)
+```
+
+### Run DE Analysis
+
+First, you need to specify the comparisons you want to perform in DE analysis. For this, a special function was developed which helps to build the right comparison strings.
+
+```{r}
+comparisons <- specify_comparisons(se_norm, condition = "Condition", sep = "_", control = NULL)
+```
+
+Then you can run DE analysis:
+
+
+```{r}
+# TODO: add ROTS and DEqMS run
+de_results <- run_DE(se = se_norm, 
+                     comparisons = comparisons,
+                     ain = NULL, 
+                     condition = NULL, 
+                     DE_method = "limma", 
+                     covariate = NULL, 
+                     logFC = TRUE, 
+                     logFC_up = 1, 
+                     logFC_down = -1, 
+                     p_adj = TRUE, 
+                     p_adj_method = "BH", 
+                     alpha = 0.05, 
+                     B = 100, 
+                     K = 500)
+```
+
+### Visualize DE Results
+
+To get an overview of the DE results of the different normalization methods, you can visualize the number of significant DE proteins per normalization method in a barplot.
+
+```{r}
+plot_overview_DE_bar(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3])
+```
+
+Another option is to generate volcano plots:
+
+```{r}
+plot_volcano_DE(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3], facet_norm = TRUE)
+```
+
+## Statistical Enrichment Analysis

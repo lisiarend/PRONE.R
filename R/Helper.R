@@ -193,3 +193,112 @@ check_input_assays <- function(se, ain) {
     }
   }
 }
+
+#' Check parameters for DE analysis
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param ain Vector of strings which assay should be used as input (default NULL).
+#'            If NULL then all normalization of the se object are plotted next to each other.
+#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
+#' @param comparisons Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)
+#' @param DE_method String specifying which DE method should be applied (limma, ROTS, DEqMS)
+#' @param covariate String specifying which column to include as covariate into limma
+#' @param logFC Boolean specifying whether to apply a logFC threshold (TRUE) or not (FALSE)
+#' @param logFC_up Upper log2 fold change threshold (dividing into up regulated)
+#' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
+#' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
+#' @param alpha Threshold for adjusted p-values or p-values
+#' @param p_adj_method String specifying the method for adjusted p-values
+#' @param B Number of bootstrapping for ROTS
+#' @param K Number of top-ranked features for reproducibility optimization
+#'
+#' @return list of checked assays and condition column name
+#' @export
+#'
+check_DE_parameters <- function(se, ain = NULL, condition = NULL, comparisons = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
+  # check input parameters
+  stopifnot(DE_method %in% c("limma", "ROTS", "DEqMS"))
+  stopifnot(p_adj_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY","fdr", "none")) # TODO: check which values available
+  stopifnot(methods::is(logFC_up, "numeric"))
+  stopifnot(methods::is(logFC_down, "numeric"))
+  stopifnot(methods::is(B, "numeric"))
+  stopifnot(methods::is(K, "numeric"))
+  stopifnot(methods::is(alpha, "numeric"))
+  stopifnot(methods::is(p_adj, "logical"))
+  stopifnot(methods::is(logFC, "logical"))
+
+  # check covariate
+  if(!is.null(covariate)){
+    if(!covariate %in% colnames(data.table::as.data.table(SummarizedExperiment::colData(se)))){
+      stop(paste0("No column named ", covariate, " in SummarizedExperiment!"))
+    }
+  }
+
+  # check comparisons
+  # TODO
+
+  # get condition
+  condition <- get_condition_value(se, condition)
+
+  # check input
+  ain <- check_input_assays(se, ain)
+  if(is.null(ain)){
+    return(NULL)
+  }
+  return(list("ain" = ain, "condition" = condition))
+}
+
+#' Helper function to check the parameters for plotting the DE results
+#'
+#' @param de_res data table resulting of run_DE
+#' @param ain String of normalization methods to visualize (must be valid normalization methods saved in de_res)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in de_res)
+#'
+#' @return list of valid inputs for plotting functions
+#' @export
+#'
+check_plot_DE_parameters <- function(de_res, ain, comparisons){
+  # check if logFC, P.Value, Change, Comparison, and Assay in de_res
+  stopifnot("logFC" %in% colnames(de_res))
+  stopifnot("Change" %in% colnames(de_res))
+  stopifnot("P.Value" %in% colnames(de_res))
+  stopifnot("Comparison" %in% colnames(de_res))
+  stopifnot("Assay" %in% colnames(de_res))
+
+  # check comparisons
+  if(is.null(comparisons)){
+    comparisons <- unique(de_res$Comparison)
+    message("All comparisons of de_res will be visualized.")
+  }
+  valid_comparisons <- comparisons[comparisons %in% unique(de_res$Comparison)]
+  not_valid_comparisons <- comparisons[!comparisons %in% unique(de_res$Comparison)]
+  if(length(not_valid_comparisons) > 0){
+    if(length(not_valid_comparisons) == length(c(comparisons))){
+      # no valid comparisons
+      stop("No valid comparison! Please change the comparisons parameter. Check with unique(de_res$Comparisons) which comparisons you can visualize.")
+    } else {
+      # some invalid comparisons --> notification
+      warning(paste0(paste0(not_valid_comparisons, collapse = ", "), ": not valid comparisons. Only valid comparisons will be visualized."))
+    }
+  }
+  comparisons <- valid_comparisons
+
+  # check ain
+  if(is.null(ain)){
+    ain <- unique(de_res$Assay)
+    message("All normalization methods of de_res will be visualized.")
+  }
+  valid_ain <- ain[ain %in% unique(de_res$Assay)]
+  not_valid_ain <- ain[!ain %in% unique(de_res$Assay)]
+  if(length(not_valid_ain) > 0){
+    if(length(not_valid_ain) == length(c(ain))){
+      # no valid input
+      stop("No valid normalization methods! Please change the ain parameter. Check with unique(de_res$Assays) which normalization methods can be visualized.")
+    } else {
+      # some invalid inputs --> notification
+      warning(paste0(paste0(not_valid_ain, collapse = ", "), ": not valid normalization methods. Only valid normalization methods will be visualized."))
+    }
+  }
+  ain <- valid_ain
+  return(list(de_res, ain, comparisons))
+}

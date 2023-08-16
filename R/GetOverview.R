@@ -49,4 +49,62 @@ plot_condition_overview <- function(se, condition = NULL){
 }
 
 
+#' Title
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
+#' @param markers vector of the IDs of the markers to plot
+#' @param id_column String specifying the column of the rowData of the SummarizedExperiment object which includes the IDs of the markers
+#' @param color_by String specifying the column to color the samples (If NULL, the condition column of the SummarizedExperiment object is used. If "No", no color bar added.)
+#' @param shape_by String specifying the column to shape the samples (If NULL or "No", no shaping of samples is done.)
+#' @param facet_norm Boolean indicating whether to facet by normalization method (TRUE) or not (FALSE)
+#' @param facet_marker Boolean indicating whether to facet by comparison (TRUE) or not (FALSE). Only valid if facet_norm = FALSE.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_markers_boxplots <- function(se, ain, markers, id_column = "Protein.IDs", color_by = NULL, shape_by = NULL, facet_norm = TRUE, facet_marker = FALSE){
+  # check input parameters
+  color_by <- get_color_value(se, color_by)
+  shape_by <- get_shape_value(se, shape_by)
+  ain <- check_input_assays(se, ain)
+
+  # check id_column
+  rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
+  if(!id_column %in% colnames(rd)){
+    # if id_column not in rowData
+    stop(paste0(id_column, " not in rowData of the SummarizedExperiment object!"))
+  }
+
+  # prepare data
+  overall_dt <- NULL
+  for(assay in c(ain)){
+    dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[assay]])
+    dt <- cbind(data.table::as.data.table(SummarizedExperiment::rowData(se))[,id_column], dt)
+    melted_dt <- data.table::melt(dt, variable.name = "Column", value.name = "Intensity", id.vars = id_column)
+    melted_dt$Method <- assay
+    if(is.null(overall_dt)){
+      overall_dt <- melted_dt
+    } else {
+      overall_dt <- rbind(overall_dt, melted_dt)
+    }
+  }
+  # merge colData
+  cd <- data.table::as.data.table(SummarizedExperiment::colData(se))
+  overall_dt <- merge(overall_dt, cd, by = "Column")
+  # subset intensities by markers
+  found_markers <- stringr::str_detect(overall_dt[[id_column]], paste(markers, collapse = "|") )
+  overall_dt <- overall_dt[found_markers,]
+
+  # facet by normalization method
+
+
+  # facet by marker
+
+
+  # do not facet by anything
+
+}
+
 

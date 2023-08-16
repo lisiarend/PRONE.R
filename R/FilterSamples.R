@@ -96,8 +96,8 @@ plot_nr_prot_samples <- function(se, ain="raw", color_by = NULL, label_by = NULL
   # get color and label values
   color_by <- get_color_value(se, color_by)
   tmp <- get_label_value(se, label_by)
-  show_sample_names <- tmp[1]
-  label_by <- tmp[2]
+  show_sample_names <- tmp[[1]]
+  label_by <- tmp[[2]]
 
   # prepare data
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
