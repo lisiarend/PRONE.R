@@ -1,0 +1,356 @@
+---
+title: "PRONE.R - Proteomics Normalization Evaluater"
+author: Arend Lis
+
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{PRONE.R}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+## Introduction {-}
+
+
+## Installation {-}
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>", eval = FALSE
+)
+```
+
+```{r loading, include=TRUE, warning=FALSE, message=FALSE}
+  # Install PRONE.R from github and build vignettes
+  if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+  devtools::install_github("lisiarend/PRONE.R", build_vignettes = TRUE, dependencies = TRUE)
+  # Load and attach PRONE.R 
+  library("PRONE.R")
+```
+
+
+## Load Data {-}
+
+
+### Example : Spike-in Data Set 
+
+```{r}
+data <- read.csv("../inst/extdata/spike/proteinGroups.txt", sep = "\t")
+md <- read.csv("../inst/extdata/spike/experimentalDesign.txt", sep = "\t")
+
+# Check if some protein groups are mixed
+mixed <- grepl("Homo sapiens.*Escherichia|Escherichia.*Homo sapiens", data$Fasta.headers)
+data <- data[!mixed,]
+
+data$Spiked <- rep("HUMAN", nrow(data))
+data$Spiked[grepl("ECOLI", data$Fasta.headers)] <- "ECOLI"
+
+se <- load_spike_data(data, md, spike_column = "Spiked", spike_value = "ECOLI", spike_concentration = "Concentration",protein_column = "Protein.IDs", gene_column = "Gene.names", ref_samples = NULL, batch_column = NULL, condition_column = "Condition", label_column = "Label")
+
+```
+
+
+## Overview of the Data {-}
+
+```{r}
+get_NA_overview(se, ain = "log2")
+```
+
+```{r}
+plot_condition_overview(se, condition = NULL)
+```
+```{r}
+plot_identified_spiked_proteins(se, color_by = "Condition")
+```
+```{r}
+plot_histogram_spiked(se, condition = "Condition")
+```
+
+```{r}
+plot_profiles_spiked(se)
+```
+
+
+## Filter Proteins {-}
+
+### Remove Proteins With Missing Values in ALL Samples
+
+```{r}
+se <- filter_complete_NA_proteins(se)
+```
+
+### Remove Proteins With a Specific Value in a Specific Column
+
+Typically proteins with "+" in the columns "Reverse", "Only.identified.by.site", and "Potential.contaminant" are removed in case of a MaxQuant proteinGroups.txt output file.
+
+```{r}
+se <- filter_proteins_by_value(se, "Reverse", "+")
+se <- filter_proteins_by_value(se, "Potential.contaminant", "+")
+se <- filter_proteins_by_value(se, "Only.identified.by.site", "+")
+```
+
+
+### Explore Missing Value Pattern
+
+```{r}
+
+plot_NA_heatmap(se, color_by = NULL, label_by = NULL, cluster_samples = TRUE, cluster_proteins = TRUE)
+
+plot_NA_heatmap(se, color_by = "Batch", label_by = "No", cluster_samples = TRUE, cluster_proteins = TRUE)
+
+```
+
+```{r}
+plot_NA_density(se)
+```
+
+```{r}
+plot_NA_frequency(se)
+```
+
+### Filter Proteins By Applying a Missing Value Threshold
+
+
+```{r}
+se <- filter_NA_proteins_by_threshold(se, thr = 0.7) 
+
+plot_NA_heatmap(se)
+```
+
+
+## Filter Samples {-}
+
+
+### Quality Control
+
+```{r}
+
+plot_nr_prot_samples(se, color_by = NULL, label_by = NULL)
+
+plot_nr_prot_samples(se, color_by = "Batch", label_by = "No")
+
+plot_nr_prot_samples(se, color_by = "No", label_by = "No")
+
+```
+
+
+```{r}
+
+plot_tot_int_samples(se, color_by = "Batch", label_by = "Label")
+
+```
+
+
+### Outlier Detection via POMA R Package
+
+```{r}
+
+poma_res <- detect_outliers_POMA(se, ain = "log2")
+
+poma_res$polygon_plot
+
+poma_res$distance_boxplot
+
+poma_res$outliers
+
+```
+
+To remove the outliers detected via the POMA algorithm, just put the data.table of the detect_outliers_POMA function into the remove_POMA_outliers function.
+
+```{r}
+
+se <- remove_POMA_outliers(se, poma_res$outliers)
+
+```
+
+However, the package also provides the option to remove samples manually. Here, an example:
+
+```{r}
+
+se_test <- remove_samples_manually(se, "Batch", "Batch 1")
+
+```
+
+
+And you can remove the reference samples directly using the function remove_reference_samples. But attention: possibly you need them for normalization!
+
+```{r}
+
+se_test <- remove_reference_samples(se)
+
+```
+
+
+## Normalization
+
+For normalization, there are multiple functions available which can be used to normalize the data. First of all, to know which normalization methods can be applied:
+
+```{r}
+
+get_normalization_methods()
+```
+
+
+You can either use normalize_se by specifying all normalization methods you want to apply on the data. For instance, if you want to perform median, mean, and MAD normalization, just execute this line:
+
+```{r}
+
+se_norm <- normalize_se(se, c("Median", "Mean", "MAD"), combination_pattern = NULL)
+```
+
+
+However, you can directly also add combinations of methods. For instance, if you want to perform Median on IRS-normalized data on top:
+
+```{r}
+
+se_norm <- normalize_se(se, c("Median", "Mean", "MAD", "Median_on_IRS"), combination_pattern = "_on_")
+
+```
+
+The combination pattern specifies which method to apply on top of the specified normalized data.
+
+### Qualitative Evaluation
+
+#### Boxplots of Normalized Data
+
+```{r}
+plot_boxplot(se_norm, ain = NULL, color_by = NULL, label_by = NULL, ncol = 3, facet_norm = TRUE)
+```
+But you can also just plot a selection of normalization methods and color for instance by batch:
+
+```{r}
+plot_boxplot(se_norm, ain = c("IRS", "Median"), color_by = "Batch", label_by = NULL, facet_norm = TRUE)
+```
+
+Another option that you have is to return the boxplots for each normalized data independently as a single ggplot object. For this, you need to set facet = FALSE:
+
+```{r}
+plot_boxplot(se_norm, ain = c("IRS", "Median"), color_by = "Batch", label_by = NULL, facet_norm = FALSE)
+```
+#### Densities of Normalized Data
+
+Similarly you can visualize the densities of the normalized data.
+
+```{r}
+plot_densities(se_norm, ain = c("Median", "Median_on_IRS"), color_by = NULL, facet_norm = TRUE)
+```
+
+#### PCA of Normalized Data
+
+Furthermore, you can visualize the normalized data in a PCA plot. Here you have some more arguments that can be changed. If you decide to visualize the methods in independent plots (facet_norm = FALSE), then a list of ggplot objects is returned. However, you have the additional option to facet by any other column of the metadata (using the facet_by parameter). Here an example:
+
+```{r}
+plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = "Timepoint", label_by = "No", shape_by = "Batch", facet_norm = FALSE, facet_by = "Group")
+```
+Or you can simply plot the PCA of the normalized data next to each other. However, the facet_by argument can then not be used. Reminder, by setting color_by = NULL, it will be first checked if a condition has been set in the SummarizedExperiment during loading the data. 
+
+```{r}
+plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = NULL, label_by = "No", shape_by = "Batch", facet_norm = TRUE)
+```
+
+
+### Quantitative Evaluation
+
+#### Intragroup Correlation
+
+```{r}
+plot_intragroup_correlation(se_norm, ain = NULL, condition = NULL, method = "pearson")
+```
+
+#### Intragroup PCV
+
+You have two options to visualize intragroup pooled coefficient of variation. You can either simply generate boxplots of intragroup PCVs of each normalization method (diff = FALSE), or you can visualize the reduction of intragroup PCV of each normalization method compared to log2 (diff = TRUE).
+
+```{r}
+plot_intragroup_PCV(se_norm, ain = NULL, condition = NULL, diff = FALSE)
+```
+
+```{r}
+plot_intragroup_PCV(se_norm, ain = NULL, condition = NULL, diff = TRUE) # TODO: what to do with raw? + ylab?
+```
+
+
+
+## Differential Expression Analysis
+
+After having performed normalization and evaluated the different normalization methods via qualitative and quantitative analysis, differential expression analysis can be used to further analyze the differences of the normalization methods.
+
+However before, you need to remove the reference samples in case of a TMT experiment. This can be easily done with the function "remove_reference_samples".
+
+```{r}
+se_norm <- remove_reference_samples(se_norm)
+```
+
+### Run DE Analysis
+
+First, you need to specify the comparisons you want to perform in DE analysis. For this, a special function was developed which helps to build the right comparison strings.
+
+```{r}
+comparisons <- specify_comparisons(se_norm, condition = "Condition", sep = "_", control = NULL)
+```
+
+Then you can run DE analysis:
+
+
+```{r}
+# TODO: add ROTS and DEqMS run
+de_results <- run_DE(se = se_norm, 
+                     comparisons = comparisons,
+                     ain = NULL, 
+                     condition = NULL, 
+                     DE_method = "limma", 
+                     covariate = NULL, 
+                     logFC = TRUE, 
+                     logFC_up = 1, 
+                     logFC_down = -1, 
+                     p_adj = TRUE, 
+                     p_adj_method = "BH", 
+                     alpha = 0.05, 
+                     B = 100, 
+                     K = 500)
+```
+
+### Visualize DE Results
+
+To get an overview of the DE results of the different normalization methods, you can visualize the number of significant DE proteins per normalization method in a barplot.
+
+```{r}
+plot_overview_DE_bar(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3])
+```
+
+Another option is to generate volcano plots:
+
+```{r}
+plot_volcano_DE(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3], facet_norm = TRUE)
+```
+
+Another possibility is to plot a heatmap of the DE results of a specific comparison.
+
+```{r}
+heatmaps <- plot_heatmap_DE(se_norm, de_results, ain = c("Median", "Mean"), comparison = comparisons[[1]], condition = NULL, label_by = NULL)
+print(heatmaps)
+```
+### Intersection of DE Results
+
+Moreover, you can also intersect the DE results of different normalization methods to see how many DE proteins overlap. For each requested comparison, an upset plot is created and a data table is returned.
+
+```{r}
+plot_upset_DE(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3], min_degree = 2)
+```
+
+### Biomarker Coverage
+
+In case you know some biomarkers of previous publications that should be significantly expressed in your biological context, you can check the number of specified markers that are DE in the different normalization methods. 
+
+```{r}
+plot_coverage_DE_markers(se_norm, de_results, ain = c("Median", "Mean", "IRS"), markers = c("A0A8I5ZTU6", "F7E134"))
+```
+
+## Statistical Enrichment Analysis
+
+Additionally, you can compare the normalization methods using statistical enrichment analysis. TODO write a little bit more.
+
+```{r}
+plot_intersection_enrichment(se_norm, de_results, ain = c("Median", "Mean", "IRS"), comparisons = comparisons[1:3], id_column = "Gene.Names", organism = "rnorvegicus", per_comparison = FALSE, top = 10)
+```
