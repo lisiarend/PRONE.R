@@ -411,10 +411,11 @@ run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method =
   }
   de_chunk$Change[is.na(de_chunk$Change)] <- "No Change"
 
-  if(is.null(S4Vectors::metadata(se)$spike)){
+  if(is.null(S4Vectors::metadata(se)$spike_column)){
     rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))[,c("Protein.IDs", "Gene.Names", "IDs")]
   } else {
     # add spike info
+    # TODO
   }
 
   de_chunk <- merge(de_chunk, rd, by="Protein.IDs")

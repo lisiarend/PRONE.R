@@ -6,9 +6,9 @@
 \usage{
 run_DE(
   se,
+  comparisons,
   ain = NULL,
   condition = NULL,
-  comparisons = NULL,
   DE_method = "limma",
   covariate = NULL,
   logFC = TRUE,
@@ -24,12 +24,12 @@ run_DE(
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
 
+\item{comparisons}{Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)}
+
 \item{ain}{Vector of strings which assay should be used as input (default NULL).
 If NULL then all normalization of the se object are plotted next to each other.}
 
 \item{condition}{column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)}
-
-\item{comparisons}{Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)}
 
 \item{DE_method}{String specifying which DE method should be applied (limma, ROTS, DEqMS)}
 

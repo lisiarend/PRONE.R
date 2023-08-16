@@ -327,4 +327,32 @@ Another option is to generate volcano plots:
 plot_volcano_DE(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3], facet_norm = TRUE)
 ```
 
+Another possibility is to plot a heatmap of the DE results of a specific comparison.
+
+```{r}
+heatmaps <- plot_heatmap_DE(se_norm, de_results, ain = c("Median", "Mean"), comparison = comparisons[[1]], condition = NULL, label_by = NULL)
+print(heatmaps)
+```
+### Intersection of DE Results
+
+Moreover, you can also intersect the DE results of different normalization methods to see how many DE proteins overlap. For each requested comparison, an upset plot is created and a data table is returned.
+
+```{r}
+plot_upset_DE(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3], min_degree = 2)
+```
+
+### Biomarker Coverage
+
+In case you know some biomarkers of previous publications that should be significantly expressed in your biological context, you can check the number of specified markers that are DE in the different normalization methods. 
+
+```{r}
+plot_coverage_DE_markers(se_norm, de_results, ain = c("Median", "Mean", "IRS"), markers = c("A0A8I5ZTU6", "F7E134"))
+```
+
 ## Statistical Enrichment Analysis
+
+Additionally, you can compare the normalization methods using statistical enrichment analysis. TODO write a little bit more.
+
+```{r}
+plot_intersection_enrichment(se_norm, de_results, ain = c("Median", "Mean", "IRS"), comparisons = comparisons[1:3], id_column = "Gene.Names", organism = "rnorvegicus", per_comparison = FALSE, top = 10)
+```

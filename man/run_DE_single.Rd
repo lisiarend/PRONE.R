@@ -7,8 +7,8 @@
 run_DE_single(
   se,
   method,
+  comparisons,
   condition = NULL,
-  comparisons = NULL,
   DE_method = "limma",
   covariate = NULL,
   logFC = TRUE,
@@ -26,9 +26,9 @@ run_DE_single(
 
 \item{method}{String specifying which assay should be used as input}
 
-\item{condition}{column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)}
-
 \item{comparisons}{Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)}
+
+\item{condition}{column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)}
 
 \item{DE_method}{String specifying which DE method should be applied (limma, ROTS, DEqMS)}
 

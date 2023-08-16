@@ -32,10 +32,11 @@ Imports:
     methods,
     ROTS,
     DEqMS,
-    scales,
     ComplexUpset,
     tidyr,
-    purrr
+    purrr,
+    circlize,
+    gprofiler2
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3

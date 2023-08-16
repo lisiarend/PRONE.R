@@ -18,7 +18,6 @@ plot_volcano_DE <- function(de_res, ain = NULL, comparisons = NULL, facet_norm =
   ain <- tmp[[2]]
   comparisons <- tmp[[3]]
   de_res <- de_res[de_res$Assay %in% ain,]
-
   # plot
   p <- list()
   if(facet_norm){
@@ -84,9 +83,111 @@ plot_volcano_DE <- function(de_res, ain = NULL, comparisons = NULL, facet_norm =
   return(p)
 }
 
+#' Title
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set (including the normalized intensities)
+#' @param de_res data table resulting of run_DE
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
+#' @param comparison String of comparison (must be a valid comparison saved in de_res)
+#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
+#' @param label_by String specifying the column to label the samples (If NULL, the labels column of the SummarizedExperiment object is used. If "No", no labeling of samples done.)
+#' @param pvalue_column column name of p-values in de_res
+#'
+#' @return list of ComplexHeatmaps for each method
+#' @export
+#'
+plot_heatmap_DE <- function(se, de_res, ain, comparison, condition = NULL, label_by = NULL, pvalue_column = "adj.P.Val"){
+  # check parameters
+  if(length(comparison) != 1){
+    stop("Only one comparison as input!")
+  }
+  ain <- check_input_assays(se, ain)
+  tmp <- check_plot_DE_parameters(de_res, ain, comparison)
+  de_res <- tmp[[1]]
+  ain <- tmp[[2]]
+  comparison <- tmp[[3]]
+  tmp <- get_label_value(se, label_by)
+  show_sample_names <- tmp[[1]]
+  label_by <- tmp[[2]]
+  condition <- get_condition_value(se, condition)
+  if(!pvalue_column %in% colnames(de_res)){
+    stop("No column named ", pvalue_column, " in DE results. Consider changing the pvalue_column parameter!")
+  }
+  # TODO: check if comparison matches condition column
+  # subset data
+  de_res <- de_res[de_res$Comparison == as.character(comparison),]
+  # plot
+  plots <- list()
+  for(method in ain){
+    # extract data
+    dt <- de_res[de_res$Assay == method,]
+    # extract metadata
+    cond_a <- strsplit(as.character(comparison), split="-")[[1]][1]
+    cond_b <- strsplit(as.character(comparison), split="-")[[1]][2]
+    md <- data.table::as.data.table(SummarizedExperiment::colData(se))
+    md <- md[md[[condition]] %in% c(cond_a, cond_b),]
+    # extract significant proteins
+    sig <- dt[ dt$Change != "No Change",]
+    if(nrow(sig) > 0){
+      # extract intensities of significant proteins
+      data <- data.table::as.data.table(SummarizedExperiment::assays(se)[[method]])
+      data$IDs <- rownames(data)
+      data <- data[data$IDs %in% sig$IDs,]
+      data <- data[, c("IDs",md$Column)]
+      rownames(data) <- data$ID
+      data$IDs <- NULL
+      if(show_sample_names){
+        colnames(data) <- md[, label_by]
+      }
+      # color vector
+      qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
+      col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+      col_vector <- rev(col_vector[54:73])
 
+      # TODO: add protein groups or gene names (instead of ID numbers)
+      # Heatmap annotation
+      colors <- col_vector[1:length(unique(md[,condition]))]
+      names(colors) <- unique(md[, condition])
+      col_annotation <- ComplexHeatmap::columnAnnotation(
+        Condition = md[, condition],
+        annotation_legend_param = list(Condition = list(title = condition)),
+        col = list(Condition = colors)
+      )
+      row_annotation <- ComplexHeatmap::rowAnnotation(
+        P.Value = sig[[pvalue_column]],
+        annotation_legend_param = list(P.Value = list(title = pvalue_column)),
+        col = list(P.Value = circlize::colorRamp2(c(min(sig[[pvalue_column]]), max(sig[[pvalue_column]])), c("green", "white")))
+      )
 
-#TODO: sort bars by increasing number of DE proteins with a parameter
+      # Cluster
+      cluster_cols = FALSE
+      cluster_rows = FALSE
+      tryCatch({
+        tmp <- stats::hclust(stats::dist(as.matrix(data)))
+        cluster_cols = TRUE
+        cluster_rows = TRUE
+      }, error = function(e){
+        print(e)
+      })
+
+      p <- ComplexHeatmap::Heatmap(
+        as.matrix(data),
+        top_annotation = col_annotation,
+        right_annotation = row_annotation,
+        show_column_names = TRUE,
+        show_row_names = TRUE,
+        cluster_rows = cluster_rows,
+        cluster_columns = cluster_cols,
+        name = paste0("Intensity (", method, ")")
+      )
+      plots[[method]] <- p
+
+    } else {
+      warning(paste0("No significant changes for method ", method, " and comparison ", comparison, ": nothing to plot."))
+    }
+  }
+  return(plots)
+}
 
 #' Overview plots of DE results
 #'
@@ -145,11 +246,10 @@ plot_upset_DE <- function(de_res, ain = NULL, comparisons = NULL, min_degree = 2
     de_res <- tmp[[1]]
     ain <- tmp[[2]]
     comparisons <- tmp[[3]]
-    dt <- de_res[de_res$Assay %in% ain, ]
+    de_res <- de_res[de_res$Assay %in% ain, ]
     p <- list()
-    t <- list()
     for (comp in comparisons) {
-      dt <- dt[dt$Comparison == comp, ]
+      dt <- de_res[de_res$Comparison == comp, ]
       # only extract significant changes
       dt <- dt[dt$Change %in% c("Up Regulated", "Down Regulated", "Significant Change"), ]
       if (nrow(dt) == 0) {
@@ -183,8 +283,6 @@ plot_upset_DE <- function(de_res, ain = NULL, comparisons = NULL, min_degree = 2
                                     ComplexUpset::intersection_size(text = list(size = 3))),
           themes = ComplexUpset::upset_default_themes(text = ggplot2::element_text(size = 12))
         )
-        p[[comp]] <- upset
-
         # prepare data table of intersections
         nr_methods <- rowSums(dt)
         t <- purrr::map2_df(dt, names(dt), ~  replace(.x, .x==TRUE, .y))
@@ -195,11 +293,74 @@ plot_upset_DE <- function(de_res, ain = NULL, comparisons = NULL, min_degree = 2
         res$Nr <- nr_methods
         res <- res[order(-res$Nr),]
         res$Protein.IDs <- rownames(res)
-        res <- res[, c("Protein.IDs", "Nr", "Assay")]
+        res <- res[, c("Protein.IDs", "Nr", "Assays")]
         colnames(res) <- c("Protein.IDs", "Number of Intersected Assays", "Assays")
-        t[[comp]] <- res
+        rownames(res) <- NULL
+        p[[comp]] <- list("upset" = upset, "table" = res)
+
       }
     }
-    return(list("plots" = p, "tables" = t))
+    return(p)
+}
+
+
+#' Barplot of coverage of DE markers per normalization method in any comparison. (If you want to have a look at a specific comparison, just subset the de_res data table before plotting.)
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param de_res data table resulting of run_DE
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
+#' @param markers vector of the IDs of the markers to plot
+#' @param id_column String specifying the column of the rowData of the SummarizedExperiment object which includes the IDs of the markers
+#'
+#' @return ggplot object
+#' @export
+#'
+plot_coverage_DE_markers <- function(se, de_res, ain, markers, id_column = "Protein.IDs"){
+  # check parameters
+  ain <- check_input_assays(se, ain)
+  tmp <- check_plot_DE_parameters(de_res, ain, comparisons = NULL)
+  de_res <- tmp[[1]]
+  ain <- tmp[[2]]
+
+  # check id_column
+  rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
+  if(!id_column %in% colnames(rd)){
+    # if id_column not in rowData
+    stop(paste0(id_column, " not in rowData of the SummarizedExperiment object!"))
+  }
+
+  # prepare data
+  de_res <- de_res[de_res$Change != "No Change",]
+  de_res <- de_res[de_res$Assay %in% ain,]
+  rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
+  found_markers <- stringr::str_detect(de_res[[id_column]], paste(markers, collapse = "|") )
+  de_biomarkers <- de_res[found_markers,]
+  de_biomarkers <- de_biomarkers[, c("Assay", id_column), with = FALSE]
+  de_biomarkers <- unique(de_biomarkers)
+  stats <- de_biomarkers %>% dplyr::group_by(Assay) %>% dplyr::summarise(DEPs = dplyr::n())
+  if(nrow(de_biomarkers)==0){
+    stats <- data.table::data.table(Assay = unique(de_res$Assay), DEPs = rep(0, nrow(stats)))
+  }
+  missing_methods <- unique(de_res$Assay)[! unique(de_res$Assay) %in% stats$Assay]
+  if(length(missing_methods) > 0){
+    tmp <- data.table::data.table(Assay = missing_methods, DEPs = rep(0, length(missing_methods)))
+    stats <- rbind(stats, tmp)
+  }
+  stats$Coverage <- stats$DEPs / length(markers)
+  stats$Label <- paste0(stats$DEPs, "/", length(markers))
+
+  # color vector
+  qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
+  col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  col_vector <- rev(col_vector[54:73])
+
+  # plot
+  p <- ggplot2::ggplot(stats, ggplot2::aes(x = get("Assay"), y = get("Coverage"), fill = get("Assay"))) +
+    ggplot2::geom_bar(stat = "identity") +
+    ggplot2::labs(x = "Assay", y = "Marker Coverage") +
+    ggplot2::scale_fill_manual(values = col_vector, name = "Normalization Method") +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5)) +
+    ggplot2::geom_label(ggplot2::aes(label = get("Label")))
+  return(p)
 }
 
