@@ -34,7 +34,30 @@ Furthermore, an exploratory analysis of the performance of normalization methods
 For data sets with known ground truth, such as spike-in and simulated data sets, performance metrics, such as true positives (TPs), false positives (FPs), and area under the curve (AUC) values, can be computed. 
 The evaluation of DE results of real-world experiments is based on visual quality inspection, for instance, using volcano plots, and an intersection analysis of the DE proteins of different normalization methods is available.
 
-## Example Data
+## Example Workflow
+
+To get familiar with the functionalities of the R package, two vignettes are provided.
+
+### Real-World Data Sets
+
+For an example analysis of a real-world proteomics data set, please refer to [this vignette](https://github.com/lisiarend/PRONE.R/inst/vignettes/PRONE.R.Rmd).
+
+The example TMT data set originates of:
+Fantahun Biadglegne et al. Mycobacterium tuberculosis Affects Protein and Lipid Content of Circulating Exosomes in Infected Patients Depending on Tuberculosis Disease State. Biomedicines 10.4 (Mar. 2022), p. 783. [https://doi.org/10.3390/biomedicines10040783](https://doi.org/10.3390/biomedicines10040783).
+
+The example LFQ data set originates of:
+Anni P. Vehmas et al. Liver lipid metabolism is altered by increased circulating estrogen to androgen ratio in male mouse. Journal of Proteomics 133 (Feb. 2016), pp. 66–75. [https://doi.org/10.1016/j.jprot.2015.12.009](https://doi.org/10.1016/j.jprot.2015.12.009).
+
+### Spike-In Data Set
+
+For an example analysis of a spike-in proteomics data set with known ground truth, please refer to [this vignette](https://github.com/lisiarend/PRONE.R/inst/vignettes/PRONE.R.Rmd).
+
+The example spike-in data set is from:
+
+Jürgen Cox, Marco Y. Hein, Christian A. Luber, Igor Paron, Nagarjuna Nagaraj, and Matthias Mann. Accurate Proteome-wide Label-free Quantification by Delayed Normalization and Maximal Peptide Ratio Extraction, Termed MaxLFQ. Molecular & Cellular Proteomics 13.9 (Sept. 2014), pp. 2513–2526. [https://doi.org/10.1074/mcp.M113.031591](https://doi.org/10.1074/mcp.M113.031591).
+
+
+
 
 
 
