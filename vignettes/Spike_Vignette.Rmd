@@ -1,10 +1,10 @@
 ---
-title: "PRONE.R - Proteomics Normalization Evaluater"
+title: "Example Workflow of Spike-In Data Set with Known Ground Truth"
 author: Arend Lis
 
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{PRONE.R}
+  %\VignetteIndexEntry{Example Workflow of Spike-In Data Set with Known Ground Truth}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -243,7 +243,7 @@ After having performed normalization and evaluated the different normalization m
 First, you need to specify the comparisons you want to perform in DE analysis. For this, a special function was developed which helps to build the right comparison strings.
 
 ```{r}
-comparisons <- specify_comparisons(se_norm, condition = "Condition", sep = "_", control = NULL)
+comparisons <- specify_comparisons(se_norm, condition = "Condition", sep = NULL, control = NULL)
 ```
 
 Then you can run DE analysis:
@@ -284,3 +284,12 @@ plot_TP_FP_spiked_bar(stats, ain = c("Median", "Mean", "MAD", "LoessF"), compari
 plot_stats_spiked_heatmap(stats, ain = c("Median", "Mean", "MAD"), metrics = c("Precision", "F1Score"))
 ```
 
+```{r}
+plot_fold_changes_spiked(se_norm, de_results, condition = "Condition", ain = c("Median", "Mean", "MAD"), comparisons = NULL)
+```
+```{r}
+plot_pvalues_spiked(se_norm, de_results, ain = c("Median", "Mean", "MAD"), comparisons = NULL)
+```
+```{r}
+plot_logFC_thresholds_spiked(se_norm, de_results, condition = NULL, ain = c("Median", "Mean", "MAD"), nrow = 1, alpha = 0.05)
+```

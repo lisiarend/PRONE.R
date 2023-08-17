@@ -1,10 +1,10 @@
 ---
-title: "PRONE.R - Proteomics Normalization Evaluater"
+title: "Example Workflow of Real-World Experimental Data Set"
 author: Arend Lis
 
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{PRONE.R}
+  %\VignetteIndexEntry{Example Workflow of Real-World Experimental Data Set}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---

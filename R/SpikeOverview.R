@@ -131,7 +131,7 @@ plot_profiles_spiked <- function(se, xlab = "Concentration"){
 
   dt$Protein.IDs <- rowdata[,"Protein.IDs"]
 
-  dt <- reshape2::melt(dt, id.vars = "Protein.IDs", measure.vars = colnames(dt), variable.name = "Column", value.name = "Intensity")
+  dt <- data.table::melt(data.table::as.data.table(dt), id.vars = "Protein.IDs", measure.vars = colnames(dt), variable.name = "Column", value.name = "Intensity")
 
   dt <- merge(dt, coldata, by = "Column")
   dt <- merge(dt, rowdata[, c("Protein.IDs", spike_column), with = FALSE], by = "Protein.IDs")

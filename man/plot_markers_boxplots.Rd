@@ -32,6 +32,9 @@ plot_markers_boxplots(
 
 \item{facet_marker}{Boolean indicating whether to facet by comparison (TRUE) or not (FALSE). Only valid if facet_norm = FALSE.}
 }
+\value{
+ggplot object
+}
 \description{
 Boxplots of intensities of specific markers
 }

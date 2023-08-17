@@ -1,1 +1,1 @@
-utils::globalVariables(c("Column", "ID", "Intensity", "valid_val", "pepIDs", "Change", "Assay", "Comparison", ".", "p_value", "Spiked", "TP", "FN", "FP", "TN"))
+utils::globalVariables(c("Column", "ID", "Intensity", "valid_val", "pepIDs", "Change", "Assay", "Comparison", ".", "p_value", "Spiked", "TP", "FN", "FP", "TN", "Concentration", "Sensitivity", "Precision", "Value"))

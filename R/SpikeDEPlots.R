@@ -33,10 +33,9 @@ get_spiked_stats_DE <- function(se, de_res){
 #' @param comparisons Vector of comparisons (must be valid comparisons saved in stats)
 #' @param metrics vector of Strings specifying the metrics (must be colnames of stats)
 #'
-#' @return
+#' @return ggplot object
 #' @export
 #'
-#' @examples
 plot_stats_spiked_heatmap <- function(stats, ain = NULL, comparisons = NULL, metrics = c("Accuracy", "Precision", "F1Score")){
   # check if measures in stats
   if(is.null(metrics)){
@@ -143,7 +142,7 @@ plot_TP_FP_spiked_box <- function(stats, ain = NULL, comparisons = NULL){
 
   # order methods
   tps <- melted_dt[melted_dt$Class == "TPs",]
-  meds <- tps %>% dplyr::group_by(Assay) %>% dplyr::summarise(Median = median(Value, na.rm = TRUE)) %>% data.table::as.data.table()
+  meds <- tps %>% dplyr::group_by(Assay) %>% dplyr::summarise(Median = stats::median(Value, na.rm = TRUE)) %>% data.table::as.data.table()
   meds <- meds[order(meds$Median),]
   melted_dt_1 <- melted_dt
   melted_dt_1$Assay <- factor(melted_dt_1$Assay, levels = meds$Assay)
@@ -156,3 +155,195 @@ plot_TP_FP_spiked_box <- function(stats, ain = NULL, comparisons = NULL){
     ggplot2::labs(x = "Normalization Method", y="Number of Proteins")
   return(p)
 }
+
+#' Boxplot of log fold changes of spike-in and background proteins for specific normalization methods and comparisons. The ground truth (calculated based on the concentrations of the spike-ins) is shown as a horizontal line.
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param de_res data table resulting of run_DE
+#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in stats)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in stats)
+#'
+#' @return ggplot object
+#' @export
+#'
+plot_fold_changes_spiked <- function(se, de_res, condition, ain = NULL, comparisons = NULL){
+  # check input
+  tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
+  stats <- tmp[[1]]
+  ain <- tmp[[2]]
+  comparisons <- tmp[[3]]
+
+  de_res <- de_res[de_res$Assay %in% ain,]
+  de_res <- de_res[de_res$Comparison %in% comparisons,]
+
+  # check if spike_column in de_res
+  spike_column <- S4Vectors::metadata(se)$spike_column
+  if(!spike_column %in% colnames(de_res)){
+    stop(paste0(spike_column, " not in de_res. Please perform run_DE again!"))
+  }
+
+  coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
+
+  # check condition
+  condition <- get_condition_value(se, condition)
+
+  # retrieve concentration
+  spike_concentration <- S4Vectors::metadata(se)$spike_concentration
+  concentrations <- unique(coldata[, c(condition, spike_concentration)])
+
+  comps <- data.table::data.table(Comparison = unique(de_res$Comparison))
+  comps$SampleA <- sapply(strsplit(as.character(comps$Comparison),"-"), "[", 1)
+  comps$SampleB <- sapply(strsplit(as.character(comps$Comparison),"-"), "[", 2)
+  comps <- merge(comps, concentrations, by.x = "SampleA", by.y = condition)
+  comps <- comps %>% dplyr::rename("ConcentrationA" = Concentration)
+  comps <- merge(comps, concentrations, by.x = "SampleB", by.y = condition)
+  comps <- comps %>% dplyr::rename("ConcentrationB" = Concentration)
+  comps$Truth <- log2(comps$ConcentrationA / comps$ConcentrationB)
+
+  spike_value <- S4Vectors::metadata(se)$spike_value
+  types <- unique(de_res[[spike_column]])
+  levels <- c(spike_value, types[!types %in% spike_value])
+  de_res[[spike_column]] <- factor(de_res[[spike_column]], levels = levels)
+
+  de_res <- merge(de_res, comps[, c("Comparison", "Truth")], by="Comparison")
+
+  p <- ggplot2::ggplot(de_res, ggplot2::aes(x=get("Assay"), y=get("logFC"), fill=get(spike_column))) +
+    ggplot2::geom_boxplot() +
+    ggplot2::facet_wrap(~Comparison, ncol=1, scales = "free_y") +
+    ggplot2::labs(fill = spike_column, x = "Normalization Method", y = "LogFC") +
+    ggplot2::scale_fill_manual(values = c("#D55E00", "#0072B2")) +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour="#0072B2", alpha=0.8)  +
+    ggplot2::geom_hline(ggplot2::aes(yintercept = get("Truth")), linetype = "dashed", color="#D55E00", alpha=0.8)
+  return(p)
+}
+
+
+#' Boxplot of p-values of spike-in and background proteins for specific normalization methods and comparisons. The ground truth (calculated based on the concentrations of the spike-ins) is shown as a horizontal line.
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param de_res data table resulting of run_DE
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in stats)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in stats)
+#'
+#' @return ggplot object
+#' @export
+#'
+plot_pvalues_spiked <- function(se, de_res, ain = NULL, comparisons = NULL){
+  # check input
+  tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
+  stats <- tmp[[1]]
+  ain <- tmp[[2]]
+  comparisons <- tmp[[3]]
+
+  de_res <- de_res[de_res$Assay %in% ain,]
+  de_res <- de_res[de_res$Comparison %in% comparisons,]
+
+  # check if spike_column in de_res
+  spike_column <- S4Vectors::metadata(se)$spike_column
+  if(!spike_column %in% colnames(de_res)){
+    stop(paste0(spike_column, " not in de_res. Please perform run_DE again!"))
+  }
+
+  coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
+
+  spike_value <- S4Vectors::metadata(se)$spike_value
+  types <- unique(de_res[[spike_column]])
+  levels <- c(spike_value, types[!types %in% spike_value])
+  de_res[[spike_column]] <- factor(de_res[[spike_column]], levels = levels)
+
+
+  p <- ggplot2::ggplot(de_res, ggplot2::aes(x=get("Assay"), y=log10(get("P.Value")), fill=get(spike_column))) +
+    ggplot2::geom_boxplot() +
+    ggplot2::facet_wrap(~Comparison, ncol=1, scales = "free_y") +
+    ggplot2::labs(fill = spike_column, x = "Normalization Method", y = expression(-log[10]~"P-value")) +
+    ggplot2::scale_fill_manual(values = c("#D55E00", "#0072B2"))
+  return(p)
+}
+
+
+#' Line plot of number of true and false positives when applying different logFC thresholds
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param de_res data table resulting of run_DE
+#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in stats)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in stats)
+#' @param nrow number of rows for facet wrap
+#' @param alpha threshold for adjusted p-values
+#'
+#' @return list of ggplot objects
+#' @export
+#'
+plot_logFC_thresholds_spiked <- function(se, de_res, condition, ain = NULL, comparisons = NULL, nrow = 2, alpha = 0.05){
+  # check input
+  tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
+  stats <- tmp[[1]]
+  ain <- tmp[[2]]
+  comparisons <- tmp[[3]]
+
+  de_res <- de_res[de_res$Assay %in% ain,]
+  de_res <- de_res[de_res$Comparison %in% comparisons,]
+
+  # check condition
+  condition <- get_condition_value(se, condition)
+
+  # retrieve concentrations to calculate ground truth logFC per comparison
+  coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
+  concentration <- S4Vectors::metadata(se)$spike_concentration
+  condition <- S4Vectors::metadata(se)$condition
+  concentrations <- unique(coldata[, c(condition, concentration), with=FALSE])
+  comps <- data.table::data.table(Comparison = unique(de_res$Comparison))
+  comps $SampleA <- sapply(strsplit(as.character(comps$Comparison),"-"), "[", 1)
+  comps $SampleB <- sapply(strsplit(as.character(comps$Comparison),"-"), "[", 2)
+  comps <- merge(comps, concentrations, by.x = "SampleA", by.y = condition)
+  comps <- comps %>% dplyr::rename("ConcentrationA" = Concentration)
+  comps <- merge(comps, concentrations, by.x = "SampleB", by.y = condition)
+  comps <- comps %>% dplyr::rename("ConcentrationB" = Concentration)
+  comps$Truth <- log2(comps$ConcentrationA / comps$ConcentrationB)
+
+  logFCs <- seq(0, round(max(comps$Truth)), 0.5)
+  alpha <- 0.05
+
+  stats <- NULL
+  for(thr in logFCs){
+    de_res$Change <- ifelse(de_res$adj.P.Val <= alpha & de_res$logFC >= thr , "Significant Change", "No Change")
+    stats_chunk <- get_spiked_stats_DE(se, de_res)
+    stats_chunk$logFCthr <- thr
+    if(is.null(stats)){
+      stats <- stats_chunk
+    } else {
+      stats <- rbind(stats, stats_chunk)
+    }
+  }
+
+  # add ground truth
+  stats <- merge(stats, comps[, c("Comparison", "Truth")])
+
+  # colors
+  qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual",]
+  col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  col_vector <- rev(col_vector[54:73])
+
+  # plot
+  p_tp <- ggplot2::ggplot(stats, ggplot2::aes(x = get("logFCthr"), y= get("TP"), color = get("Assay"))) +
+    ggplot2::geom_line(lwd = 1) +
+    ggplot2::facet_wrap(~Comparison, scales = "free_y", nrow = nrow) +
+    ggplot2::labs(x = "Fold Change Threshold", y="Number of True Positives") +
+    ggplot2::geom_vline(ggplot2::aes(xintercept = get("Truth")), linetype="dotted") +
+    ggplot2::scale_x_continuous(breaks = seq(0, round(max(stats$Truth)))) +
+    ggplot2::scale_color_manual(name = "Normalization Method", values = col_vector)
+
+  p_fp <- ggplot2::ggplot(stats, ggplot2::aes(x = get("logFCthr"), y= get("FP"), color = get("Assay"))) +
+    ggplot2::geom_line(lwd =1) +
+    ggplot2::facet_wrap(~Comparison, scales = "free_y", nrow = nrow) +
+    ggplot2::labs(x = "Fold Change Threshold", y="Number of False Positives") +
+    ggplot2::scale_x_continuous(breaks = seq(0, round(max(stats$Truth)))) +
+    ggplot2::scale_color_manual(name = "Normalization Method", values = col_vector)
+  return(list("TP" = p_tp, "FP" = p_fp))
+}
+
+
+
+
+
