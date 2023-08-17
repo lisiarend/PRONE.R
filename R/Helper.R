@@ -302,3 +302,55 @@ check_plot_DE_parameters <- function(de_res, ain, comparisons){
   ain <- valid_ain
   return(list(de_res, ain, comparisons))
 }
+
+#' Helper function to check the parameters for plotting the DE stats of spike-in data sets
+#'
+#' @param stats data table resulting of get_spiked_stats_DE
+#' @param ain String of normalization methods to visualize (must be valid normalization methods saved in de_res)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in de_res)
+#'
+#' @return list of valid inputs for plotting functions
+#' @export
+#'
+check_stats_spiked_DE_parameters <- function(stats, ain, comparisons){
+  # check Comparison, and Assay in stats
+  stopifnot("Assay" %in% colnames(stats))
+  stopifnot("Comparison" %in% colnames(stats))
+
+  # check comparisons
+  if(is.null(comparisons)){
+    comparisons <- unique(stats$Comparison)
+    message("All comparisons of stats will be visualized.")
+  }
+  valid_comparisons <- comparisons[comparisons %in% unique(stats$Comparison)]
+  not_valid_comparisons <- comparisons[!comparisons %in% unique(stats$Comparison)]
+  if(length(not_valid_comparisons) > 0){
+    if(length(not_valid_comparisons) == length(c(comparisons))){
+      # no valid comparisons
+      stop("No valid comparison! Please change the comparisons parameter. Check with unique(stats$Comparisons) which comparisons you can visualize.")
+    } else {
+      # some invalid comparisons --> notification
+      warning(paste0(paste0(not_valid_comparisons, collapse = ", "), ": not valid comparisons. Only valid comparisons will be visualized."))
+    }
+  }
+  comparisons <- valid_comparisons
+
+  # check ain
+  if(is.null(ain)){
+    ain <- unique(stats$Assay)
+    message("All normalization methods of de_res will be visualized.")
+  }
+  valid_ain <- ain[ain %in% unique(stats$Assay)]
+  not_valid_ain <- ain[!ain %in% unique(stats$Assay)]
+  if(length(not_valid_ain) > 0){
+    if(length(not_valid_ain) == length(c(ain))){
+      # no valid input
+      stop("No valid normalization methods! Please change the ain parameter. Check with unique(de_res$Assays) which normalization methods can be visualized.")
+    } else {
+      # some invalid inputs --> notification
+      warning(paste0(paste0(not_valid_ain, collapse = ", "), ": not valid normalization methods. Only valid normalization methods will be visualized."))
+    }
+  }
+  ain <- valid_ain
+  return(list(stats, ain, comparisons))
+}

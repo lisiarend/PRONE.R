@@ -36,12 +36,12 @@ knitr::opts_chunk$set(
 ### Example 1: TMT Data Set
 
 ```{r}
-data <- read.csv("../inst/extdata/real_world/TMT/proteinGroups_harmonized_plasma.csv", row.names = 1)
-md <- read.csv("../inst/extdata/real_world/TMT/metadata_plasma.csv", row.names = 1)
+data <- read.csv("../inst/extdata/real_world/TMT/proteinGroups.txt", sep ="\t")
+md <- read.csv("../inst/extdata/real_world/TMT/metadata.txt", sep = "\t")
 
-ref_samples <- md[md$Condition == "ref",]$Column
+ref_samples <- md[md$Group == "Common.reference",]$Column
 
-se <- load_data(data, md, protein_column = "Protein.IDs", gene_column = "Gene.names", ref_samples = ref_samples, batch_column = "Batch", condition_column = "Condition", label_column = "Label")
+se <- load_data(data, md, protein_column = "Protein.IDs", gene_column = "Gene.names", ref_samples = ref_samples, batch_column = "Pool", condition_column = "Group", label_column = "Label")
 
 ```
 

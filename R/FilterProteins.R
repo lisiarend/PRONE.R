@@ -48,7 +48,8 @@ filter_proteins_by_value <- function(se, column_name = "Reverse", values = c("+"
       message(paste0(rm, " proteins were removed."))
     }
   } else {
-    stop(paste0("Column ", column_name, "not in SummarizedExperiment object!"))
+    warning(paste0("Column ", column_name, " not in SummarizedExperiment object!"))
+    se_subset <- se
   }
   return(se_subset)
 }

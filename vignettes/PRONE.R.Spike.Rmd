@@ -23,10 +23,10 @@ knitr::opts_chunk$set(
 
 ```{r loading, include=TRUE, warning=FALSE, message=FALSE}
   # Install PRONE.R from github and build vignettes
-  if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
-  devtools::install_github("lisiarend/PRONE.R", build_vignettes = TRUE, dependencies = TRUE)
+  #if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+  #devtools::install_github("lisiarend/PRONE.R", build_vignettes = TRUE, dependencies = TRUE)
   # Load and attach PRONE.R 
-  library("PRONE.R")
+  #library("PRONE.R")
 ```
 
 
@@ -97,8 +97,6 @@ se <- filter_proteins_by_value(se, "Only.identified.by.site", "+")
 
 plot_NA_heatmap(se, color_by = NULL, label_by = NULL, cluster_samples = TRUE, cluster_proteins = TRUE)
 
-plot_NA_heatmap(se, color_by = "Batch", label_by = "No", cluster_samples = TRUE, cluster_proteins = TRUE)
-
 ```
 
 ```{r}
@@ -127,17 +125,12 @@ plot_NA_heatmap(se)
 ```{r}
 
 plot_nr_prot_samples(se, color_by = NULL, label_by = NULL)
-
-plot_nr_prot_samples(se, color_by = "Batch", label_by = "No")
-
-plot_nr_prot_samples(se, color_by = "No", label_by = "No")
-
 ```
 
 
 ```{r}
 
-plot_tot_int_samples(se, color_by = "Batch", label_by = "Label")
+plot_tot_int_samples(se, color_by = "Condition", label_by = "Label")
 
 ```
 
@@ -164,23 +157,6 @@ se <- remove_POMA_outliers(se, poma_res$outliers)
 
 ```
 
-However, the package also provides the option to remove samples manually. Here, an example:
-
-```{r}
-
-se_test <- remove_samples_manually(se, "Batch", "Batch 1")
-
-```
-
-
-And you can remove the reference samples directly using the function remove_reference_samples. But attention: possibly you need them for normalization!
-
-```{r}
-
-se_test <- remove_reference_samples(se)
-
-```
-
 
 ## Normalization
 
@@ -196,17 +172,9 @@ You can either use normalize_se by specifying all normalization methods you want
 
 ```{r}
 
-se_norm <- normalize_se(se, c("Median", "Mean", "MAD"), combination_pattern = NULL)
+se_norm <- normalize_se(se, c("Median", "Mean", "MAD", "LoessF"), combination_pattern = NULL)
 ```
 
-
-However, you can directly also add combinations of methods. For instance, if you want to perform Median on IRS-normalized data on top:
-
-```{r}
-
-se_norm <- normalize_se(se, c("Median", "Mean", "MAD", "Median_on_IRS"), combination_pattern = "_on_")
-
-```
 
 The combination pattern specifies which method to apply on top of the specified normalized data.
 
@@ -220,20 +188,20 @@ plot_boxplot(se_norm, ain = NULL, color_by = NULL, label_by = NULL, ncol = 3, fa
 But you can also just plot a selection of normalization methods and color for instance by batch:
 
 ```{r}
-plot_boxplot(se_norm, ain = c("IRS", "Median"), color_by = "Batch", label_by = NULL, facet_norm = TRUE)
+plot_boxplot(se_norm, ain = c("Mean", "Median"), color_by = "Condition", label_by = NULL, facet_norm = TRUE)
 ```
 
 Another option that you have is to return the boxplots for each normalized data independently as a single ggplot object. For this, you need to set facet = FALSE:
 
 ```{r}
-plot_boxplot(se_norm, ain = c("IRS", "Median"), color_by = "Batch", label_by = NULL, facet_norm = FALSE)
+plot_boxplot(se_norm, ain = c("Mean", "Median"), color_by = "Condition", label_by = NULL, facet_norm = FALSE)
 ```
 #### Densities of Normalized Data
 
 Similarly you can visualize the densities of the normalized data.
 
 ```{r}
-plot_densities(se_norm, ain = c("Median", "Median_on_IRS"), color_by = NULL, facet_norm = TRUE)
+plot_densities(se_norm, ain = c("Median", "MAD"), color_by = NULL, facet_norm = TRUE)
 ```
 
 #### PCA of Normalized Data
@@ -241,14 +209,8 @@ plot_densities(se_norm, ain = c("Median", "Median_on_IRS"), color_by = NULL, fac
 Furthermore, you can visualize the normalized data in a PCA plot. Here you have some more arguments that can be changed. If you decide to visualize the methods in independent plots (facet_norm = FALSE), then a list of ggplot objects is returned. However, you have the additional option to facet by any other column of the metadata (using the facet_by parameter). Here an example:
 
 ```{r}
-plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = "Timepoint", label_by = "No", shape_by = "Batch", facet_norm = FALSE, facet_by = "Group")
+plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = "Condition", label_by = "No", shape_by = NULL, facet_norm = TRUE, facet_by = NULL)
 ```
-Or you can simply plot the PCA of the normalized data next to each other. However, the facet_by argument can then not be used. Reminder, by setting color_by = NULL, it will be first checked if a condition has been set in the SummarizedExperiment during loading the data. 
-
-```{r}
-plot_PCA(se_norm, ain = c("Median", "Mean"), color_by = NULL, label_by = "No", shape_by = "Batch", facet_norm = TRUE)
-```
-
 
 ### Quantitative Evaluation
 
@@ -275,12 +237,6 @@ plot_intragroup_PCV(se_norm, ain = NULL, condition = NULL, diff = TRUE) # TODO: 
 ## Differential Expression Analysis
 
 After having performed normalization and evaluated the different normalization methods via qualitative and quantitative analysis, differential expression analysis can be used to further analyze the differences of the normalization methods.
-
-However before, you need to remove the reference samples in case of a TMT experiment. This can be easily done with the function "remove_reference_samples".
-
-```{r}
-se_norm <- remove_reference_samples(se_norm)
-```
 
 ### Run DE Analysis
 
@@ -311,46 +267,20 @@ de_results <- run_DE(se = se_norm,
                      K = 500)
 ```
 
-### Visualize DE Results
+### Visualize DE Results with Ground Truth
 
-To get an overview of the DE results of the different normalization methods, you can visualize the number of significant DE proteins per normalization method in a barplot.
-
-```{r}
-plot_overview_DE_bar(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3])
-```
-
-Another option is to generate volcano plots:
+First, you need to run get_spiked_stats_DE to calculate multiple performance metrics.
 
 ```{r}
-plot_volcano_DE(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3], facet_norm = TRUE)
+stats <- get_spiked_stats_DE(se_norm, de_results)
 ```
 
-Another possibility is to plot a heatmap of the DE results of a specific comparison.
+You can then visualize the number of TPs and FPs for specific normalization methods.
 
 ```{r}
-heatmaps <- plot_heatmap_DE(se_norm, de_results, ain = c("Median", "Mean"), comparison = comparisons[[1]], condition = NULL, label_by = NULL)
-print(heatmaps)
+plot_TP_FP_spiked_bar(stats, ain = c("Median", "Mean", "MAD", "LoessF"), comparisons = NULL)
 ```
-### Intersection of DE Results
-
-Moreover, you can also intersect the DE results of different normalization methods to see how many DE proteins overlap. For each requested comparison, an upset plot is created and a data table is returned.
-
 ```{r}
-plot_upset_DE(de_results, ain = c("Median", "Mean", "MAD", "IRS"), comparisons = comparisons[1:3], min_degree = 2)
+plot_stats_spiked_heatmap(stats, ain = c("Median", "Mean", "MAD"), metrics = c("Precision", "F1Score"))
 ```
 
-### Biomarker Coverage
-
-In case you know some biomarkers of previous publications that should be significantly expressed in your biological context, you can check the number of specified markers that are DE in the different normalization methods. 
-
-```{r}
-plot_coverage_DE_markers(se_norm, de_results, ain = c("Median", "Mean", "IRS"), markers = c("A0A8I5ZTU6", "F7E134"))
-```
-
-## Statistical Enrichment Analysis
-
-Additionally, you can compare the normalization methods using statistical enrichment analysis. TODO write a little bit more.
-
-```{r}
-plot_intersection_enrichment(se_norm, de_results, ain = c("Median", "Mean", "IRS"), comparisons = comparisons[1:3], id_column = "Gene.Names", organism = "rnorvegicus", per_comparison = FALSE, top = 10)
-```

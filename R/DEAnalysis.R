@@ -415,7 +415,9 @@ run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method =
     rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))[,c("Protein.IDs", "Gene.Names", "IDs")]
   } else {
     # add spike info
-    # TODO
+    spike_column <- S4Vectors::metadata(se)$spike_column
+    cols <- c("Protein.IDs", "Gene.Names", "IDs", spike_column)
+    rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))[, cols]
   }
 
   de_chunk <- merge(de_chunk, rd, by="Protein.IDs")
