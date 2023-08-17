@@ -43,9 +43,11 @@ To get familiar with the functionalities of the R package, two vignettes are pro
 For an example analysis of a real-world proteomics data set, please refer to [this vignette](https://github.com/lisiarend/PRONE.R/inst/vignettes/PRONE.R.Rmd).
 
 The example TMT data set originates of:
+
 Fantahun Biadglegne et al. Mycobacterium tuberculosis Affects Protein and Lipid Content of Circulating Exosomes in Infected Patients Depending on Tuberculosis Disease State. Biomedicines 10.4 (Mar. 2022), p. 783. [https://doi.org/10.3390/biomedicines10040783](https://doi.org/10.3390/biomedicines10040783).
 
 The example LFQ data set originates of:
+
 Anni P. Vehmas et al. Liver lipid metabolism is altered by increased circulating estrogen to androgen ratio in male mouse. Journal of Proteomics 133 (Feb. 2016), pp. 66–75. [https://doi.org/10.1016/j.jprot.2015.12.009](https://doi.org/10.1016/j.jprot.2015.12.009).
 
 ### Spike-In Data Set
