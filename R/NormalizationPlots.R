@@ -126,7 +126,7 @@ get_complete_scatter_dt <- function(se, ain=NULL){
 #' @return if facet_norm = TRUE, ggplot object, else list of ggplot objects
 #' @export
 #'
-plot_boxplot <- function(se, ain = NULL, color_by = NULL, label_by = NULL, facet_norm = TRUE, ncol = 3){
+plot_boxplots <- function(se, ain = NULL, color_by = NULL, label_by = NULL, facet_norm = TRUE, ncol = 3){
   # check input
   ain <- check_input_assays(se, ain)
   if(is.null(ain)){
@@ -161,6 +161,9 @@ plot_boxplot <- function(se, ain = NULL, color_by = NULL, label_by = NULL, facet
       ggplot2::scale_fill_manual(name = color_by, values = col_vector) +
       ggplot2::labs(x="Intensity", y="Samples") +
       ggplot2::facet_wrap(~Assay, scales="free_x", ncol=ncol)
+    if(!show_sample_names){
+      p <- p + ggplot2::theme(axis.text.y = ggplot2::element_blank())
+    }
   } else {
     p <- list()
     for(method in c(ain)){
@@ -170,6 +173,9 @@ plot_boxplot <- function(se, ain = NULL, color_by = NULL, label_by = NULL, facet
         ggplot2::stat_boxplot(geom ='errorbar', width = 0.4) +
         ggplot2::scale_fill_manual(name = color_by, values = col_vector) +
         ggplot2::labs(x="Intensity", y="Samples")
+      if(!show_sample_names){
+        tmp <- tmp + ggplot2::theme(axis.text.y = ggplot2::element_blank())
+      }
       p[[method]] <- tmp
     }
   }
@@ -551,6 +557,8 @@ plot_intragroup_PCV <- function(se, ain = NULL, condition = NULL, diff = FALSE){
     assays[e] <- NULL
   }
 
+  assays["raw"] <- NULL
+
   # get condition
   condition <- get_condition_value(se, condition)
 
@@ -615,11 +623,13 @@ plot_intragroup_PMAD <- function(se, ain=NULL, condition = NULL, diff = FALSE){
     assays[e] <- NULL
   }
 
+  assays["raw"] <- NULL
+
   # get condition
   condition <- get_condition_value(se, condition)
 
   # prepare data
-  avgmadmem <- calculateAvgMadMem(assays, data.table::as.data.table(SummarizedExperiment::colData(se))[,get(condition)])
+  avgmadmem <- calculateAvgMadMem(assays, data.table::as.data.table(SummarizedExperiment::colData(se))[,condition])
   PMAD_intra <- data.table::as.data.table(avgmadmem)
   PMAD_intra <- data.table::melt(PMAD_intra, measure.vars = colnames(PMAD_intra), variable.name = "Normalization", value.name = "PMAD")
   PMAD_intra$Normalization <- factor(PMAD_intra$Normalization, levels = sort(as.character(unique(PMAD_intra$Normalization))))
@@ -680,12 +690,13 @@ plot_intragroup_PEV <- function(se, ain=NULL, condition = NULL, diff = FALSE){
   for(e in exclude){
     assays[e] <- NULL
   }
+  assays["raw"] <- NULL
 
   # get condition
   condition <- get_condition_value(se, condition)
 
   # prepare data
-  avgVarianceMat <- calculateAvgReplicateVariation(assays, data.table::as.data.table(SummarizedExperiment::colData(se))[,get(condition)])
+  avgVarianceMat <- calculateAvgReplicateVariation(assays, data.table::as.data.table(SummarizedExperiment::colData(se))[,condition])
   PEV_intra <- data.table::as.data.table(avgVarianceMat)
   PEV_intra <- data.table::melt(PEV_intra, measure.vars = colnames(PEV_intra), variable.name = "Normalization", value.name = "PEV")
   PEV_intra$Normalization <- factor(PEV_intra$Normalization, levels = sort(as.character(unique(PEV_intra$Normalization))))
