@@ -364,3 +364,33 @@ plot_coverage_DE_markers <- function(se, de_res, ain, markers, id_column = "Prot
   return(p)
 }
 
+#' Overview heatmap plot of DE results
+#'
+#' @param de_res data table resulting of run_DE
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in de_res)
+#'
+#' @return ggplot object
+#' @export
+#'
+plot_overview_DE_tile <- function(de_res, ain = NULL, comparisons = NULL){
+  # check parameters
+  tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
+  de_res <- tmp[[1]]
+  ain <- tmp[[2]]
+  comparisons <- tmp[[3]]
+
+  # get overview DE
+  dt <- de_res[de_res$Change != "No Change",]
+  dt <- dt[dt$Assay %in% ain, ]
+  dt <- dt[dt$Comparison %in% comparisons,]
+  dt <- dt %>% dplyr::count(Comparison, Assay, sort = TRUE)
+
+  # plot
+  p <- ggplot2::ggplot(dt, ggplot2::aes(x = get("Assay"), y = get("Comparison"), fill = get("n"))) +
+    ggplot2::geom_tile() +
+    ggplot2:: theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 1)) +
+    ggplot2::labs(x = "Normalization Method", y = "Comparison") +
+    ggplot2::scale_fill_distiller(name = "DE Proteins", direction = 1)
+  return(p)
+}
