@@ -109,7 +109,7 @@ calculateAvgMadMem <- function(methodList, sampleReplicateGroups) {
   groupIndexList <- getIndexList(sampleReplicateGroups)
 
   calculateAvgFeatureMadForGroup <- function(groupIndices, methodData) {
-    groupData <- methodData[[groupIndices]] # .. added
+    groupData <- methodData[,groupIndices] # .. added
     featureMAD <- matrixStats::rowMads(as.matrix(groupData), na.rm=TRUE) # as.matrix added
     featureMAD
   }
@@ -153,7 +153,7 @@ calculateAvgReplicateVariation <- function(methodList, sampleReplicateGroups) {
 
   calculateReplicateGroupVariance <- function(groupIndices, methodData) {
 
-    groupData <- methodData[[groupIndices]] # .. added
+    groupData <- methodData[,groupIndices] # .. added
     groupData <- as.matrix(groupData) # line added
     rowNonNACount <- rowSums(!is.na(groupData)) - 1
     rowVariances <- rowNonNACount * matrixStats::rowVars(groupData, na.rm=TRUE)
