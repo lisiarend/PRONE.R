@@ -48,7 +48,7 @@ specify_comparisons <- function(se, condition = NULL, sep = NULL, control = NULL
           }
         }
         if(match_count == must_match){
-          comparisons <- c(comparisons, paste0(sample_a, "-", sample_b))
+          comparisons <- c(comparisons, paste0(sample_b, "-", sample_a))
         }
       }
     }
