@@ -400,7 +400,7 @@ run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method =
     if(sum(rd$Protein.IDs %in% de_res_comp$Protein.IDs) != nrow(rd)){
       missing <- rd$Protein.IDs[! rd$Protein.IDs %in% de_res_comp$Protein.IDs]
       if(length(missing) > 0){
-        de <- data.table::data.table("Protein.IDs" = missing, "logFC" = rep(NA, length(missing)), "P.Value" = rep(NA, length(missing)), "adj.P.Val" = rep(NA, length(missing)), "Change" = rep("No Change", length(missing)), "Comparison" = rep(comp, length(missing)))
+        de <- data.table::data.table("Protein.IDs" = missing, "logFC" = rep(NA, length(missing)), "P.Value" = rep(NA, length(missing)), "adj.P.Val" = rep(NA, length(missing)), "Change" = rep("No Change", length(missing)), "Comparison" = rep(comp, length(missing)), "Assay" = rep(method, length(missing)))
         de_chunk <- rbind(de_chunk, de)
       }
     }
