@@ -661,7 +661,7 @@ normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.
 
   # single normalization
   if(length(sing_methods) > 0){
-    se <- normalize_se_single(se, sing_methods)
+    se <- normalize_se_single(se, sing_methods, gamma.0 = gamma.0)
   }
   # combined normalization
   if(!is.null(combination_pattern)){
@@ -669,7 +669,7 @@ normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.
       for(m in comb_methods){
         method <- strsplit(m, combination_pattern)[[1]][1]
         ain <- strsplit(m, combination_pattern)[[1]][2]
-        se <- normalize_se_combination(se, c(method), c(ain), combination_pattern)
+        se <- normalize_se_combination(se, c(method), c(ain), combination_pattern, gamma.0 = gamma.0)
       }
     }
   }
