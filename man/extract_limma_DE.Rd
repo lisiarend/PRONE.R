@@ -11,7 +11,6 @@ extract_limma_DE(
   logFC_up = 1,
   logFC_down = -1,
   p_adj = TRUE,
-  p_adj_method = "BH",
   alpha = 0.05
 )
 }
@@ -27,8 +26,6 @@ extract_limma_DE(
 \item{logFC_down}{Lower log2 fold change threshold (dividing into down regulated)}
 
 \item{p_adj}{Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)}
-
-\item{p_adj_method}{String specifying the method for adjusted p-values}
 
 \item{alpha}{Threshold for adjusted p-values or p-values}
 }

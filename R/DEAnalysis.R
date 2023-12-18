@@ -109,17 +109,16 @@ perform_limma <- function(data, condition_vector, comparisons, covariate = NULL)
 #' @param logFC_up Upper log2 fold change threshold (dividing into up regulated)
 #' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
 #' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
-#' @param p_adj_method String specifying the method for adjusted p-values
 #' @param alpha Threshold for adjusted p-values or p-values
 #'
 #' @return Data table with limma DE results
 #' @export
 #'
-extract_limma_DE <- function(fit, comparisons, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05){
+extract_limma_DE <- function(fit, comparisons, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05){
   de_res <- NULL
   for (i in 1:length(comparisons)){
     # get results for each comparison
-    top.table <- limma::topTable(fit, sort.by = "P", number=Inf, coef=c(i), adjust.method = p_adj_method)
+    top.table <- limma::topTable(fit, sort.by = "P", number=Inf, coef=c(i), adjust.method = "BH")
     gene_reg <- data.table::setDT(top.table, keep.rownames = "ID") # save row names as column
     if(logFC){
       # logFC
@@ -163,7 +162,6 @@ extract_limma_DE <- function(fit, comparisons, logFC = TRUE, logFC_up = 1, logFC
 #' @param logFC_up Upper log2 fold change threshold (dividing into up regulated)
 #' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
 #' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
-#' @param p_adj_method String specifying the method for adjusted p-values
 #' @param alpha Threshold for adjusted p-values or p-values
 #' @param B Number of bootstrapping for ROTS
 #' @param K Number of top-ranked features for reproducibility optimization
@@ -171,7 +169,7 @@ extract_limma_DE <- function(fit, comparisons, logFC = TRUE, logFC_up = 1, logFC
 #' @return Data table with DE results
 #' @export
 #'
-perform_ROTS <- function(data, condition, comparisons, condition_name, coldata, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B =100, K = 500){ # TODO: p_adj_method
+perform_ROTS <- function(data, condition, comparisons, condition_name, coldata, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05, B =100, K = 500){
   de_res <- NULL
   for (comp in comparisons){
     # extract data of comparison
@@ -286,14 +284,13 @@ spectraCounteBayes_DEqMS <- function(fit, coef_col){
 #' @param logFC_up Upper log2 fold change threshold (dividing into up regulated)
 #' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
 #' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
-#' @param p_adj_method String specifying the method for adjusted p-values
 #' @param alpha Threshold for adjusted p-values or p-values
 #'
 #'
 #' @return data.table of DE results
 #' @export
 #'
-perform_DEqMS <- function(fit, se, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05){ #TODO: p_adj_method
+perform_DEqMS <- function(fit, se, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05){
   prot <- rownames(fit$coefficients)
   rowdata <- data.table::as.data.table(SummarizedExperiment::rowData(se))
   PSMs <- data.frame("Razor + unique peptides" = rowdata$Razor...unique.peptides)
@@ -352,16 +349,15 @@ perform_DEqMS <- function(fit, se, logFC = TRUE, logFC_up = 1, logFC_down = -1, 
 #' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
 #' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
 #' @param alpha Threshold for adjusted p-values or p-values
-#' @param p_adj_method String specifying the method for adjusted p-values
 #' @param B Number of bootstrapping for ROTS
 #' @param K Number of top-ranked features for reproducibility optimization
 #'
 #' @return Data table of DE results
 #' @export
 #'
-run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
+run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05, B = 100, K = 500){
   # check parameters (if users are calling this function instead of run_DE)
-  params <- check_DE_parameters(se, ain = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha, B = B, K = K)
+  params <- check_DE_parameters(se, ain = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
   method <- params[["ain"]]
   condition <- params[["condition"]]
 
@@ -380,14 +376,14 @@ run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method =
   if(DE_method == "limma"){
     # run limma
     fit <- perform_limma(data = dt, condition_vector = condition_vector, comparisons = comparisons, covariate = covariate)
-    de_chunk <- extract_limma_DE(fit = fit, comparisons = comparisons, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha)
+    de_chunk <- extract_limma_DE(fit = fit, comparisons = comparisons, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha)
   } else if (DE_method == "ROTS"){
     # run ROTS
-    de_chunk <- perform_ROTS(data = dt, condition = condition, comparisons = comparisons, condition_name = condition, coldata = data.table::as.data.table(SummarizedExperiment::colData(se)), logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha, B = B, K = K)
+    de_chunk <- perform_ROTS(data = dt, condition = condition, comparisons = comparisons, condition_name = condition, coldata = data.table::as.data.table(SummarizedExperiment::colData(se)), logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
   } else if (DE_method == "DEqMS"){
     # first run limma model
     fit <- perform_limma(data = dt, condition_vector = condition_vector, comparisons = comparisons, covariate = covariate)
-    de_chunk <- perform_DEqMS(fit = fit, se = se, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha)
+    de_chunk <- perform_DEqMS(fit = fit, se = se, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha)
   }
 
   # add other information
@@ -439,23 +435,27 @@ run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method =
 #' @param logFC_down Lower log2 fold change threshold (dividing into down regulated)
 #' @param p_adj Boolean specifying whether to apply a threshold on adjusted p-values (TRUE) or on raw p-values (FALSE)
 #' @param alpha Threshold for adjusted p-values or p-values
-#' @param p_adj_method String specifying the method for adjusted p-values
 #' @param B Number of bootstrapping for ROTS
 #' @param K Number of top-ranked features for reproducibility optimization
 #'
 #' @return Data table of DE results of selected normalized data sets
 #' @export
 #'
-run_DE <- function(se, comparisons, ain = NULL, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
+run_DE <- function(se, comparisons, ain = NULL, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05, B = 100, K = 500){
   # check parameters
-  params <- check_DE_parameters(se, ain = ain, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha, B = B, K = K)
+  params <- check_DE_parameters(se, ain = ain, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
   ain <- params[["ain"]]
   condition <- params[["condition"]]
+
+  if("raw" %in% ain){
+    message("DE Analysis will not be performed on raw data.")
+    ain <- ain[ain != "raw"]
+  }
 
   # run DE
   de_res <- NULL
   for(method in c(ain)){
-    de_chunk <- run_DE_single(se, method = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, p_adj_method = p_adj_method, alpha = alpha, B = B, K = K)
+    de_chunk <- run_DE_single(se, method = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
     # add to overall results
     if(is.null(de_res)){
       de_res <- de_chunk
@@ -527,5 +527,3 @@ get_overview_DE <- function(de_res){
   dt$Assay <- factor(dt$Assay, levels = unique(de_res$Assay))
   return(dt)
 }
-
-# TODO: how to handle raw

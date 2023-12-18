@@ -145,6 +145,7 @@ irsNorm <- function(se, ain="raw", aout="IRS"){
   if(ain != "raw"){
     dt <- 2^dt
   }
+
   batch <- S4Vectors::metadata(se)$batch
   refs <- S4Vectors::metadata(se)$refs
   md <- data.table::as.data.table(SummarizedExperiment::colData(se))
@@ -261,7 +262,7 @@ tmmNorm <- function(se, ain="raw", aout="TMM"){
 rlrNorm <- function(se, ain="log2", aout="Rlr"){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
   dt <- as.data.frame(dt)
-  sample_median <- matrixStats::rowMedians(as.matrix(dt), na.rm = TRUE)
+  sample_median <- matrixStats::rowMedians(as.matrix(dt), na.rm = TRUE, useNames = TRUE)
   for (i in 1:ncol(dt)){ # iterate over samples
     sampleA <- dt[,i] # sample to normalize
     lrFit <- MASS::rlm(as.matrix(sampleA) ~
@@ -295,7 +296,7 @@ rlrMANorm <- function(se, ain="log2",aout="RlrMA"){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
   dt_matrix <- as.matrix(dt)
   # MA transformation
-  ref_a <- MatrixGenerics::rowMedians(dt_matrix, na.rm=TRUE) # A = median over all samples --> vector of length (number of proteins)
+  ref_a <- MatrixGenerics::rowMedians(dt_matrix, na.rm=TRUE, useNames = TRUE) # A = median over all samples --> vector of length (number of proteins)
   for (i in 1:ncol(dt)){ # iterate over samples
     comp_sample <- dt_matrix[, i] # sample to normalize
     m <- comp_sample - ref_a  # M = sample to normalize
@@ -493,6 +494,24 @@ robNorm <- function(se, ain="log2", aout="RobNorm", gamma.0 = 0.1){
   return(se)
 }
 
+#' limma::removeBatchEffects (limBE)
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
+#' @param ain String which assay should be used as input (default log2)
+#' @param aout String which assay should be used to save normalized data (default limBE)
+#'
+#' @return SummarizedExperiment containing the limBE normalized data as assay
+#' @export
+#'
+limmaNorm <- function(se, ain = "log2", aout = "limBE"){
+  dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
+  batch <- S4Vectors::metadata(se)$batch
+  dt_batch <- limma::removeBatchEffect(dt, batch = batch_column)
+  SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(dt_batch)
+  return(se)
+}
+
 
 ## ----- Main Normalization Method Functions ----- ##
 
@@ -503,7 +522,7 @@ robNorm <- function(se, ain="log2", aout="RobNorm", gamma.0 = 0.1){
 #'
 get_normalization_methods <- function(){
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "HarmonizR", "limBE")
   return(norm_names)
 }
 
@@ -520,9 +539,9 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
   # vector with available normalization methods
   norm_functions <- norm_functions <- list(globalMeanNorm, globalMedianNorm, medianNorm, meanNorm, irsNorm,
                                            quantileNorm, vsnNorm, loessFNorm, loessCycNorm, rlrNorm,
-                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm)
+                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, run_harmonizR, limmaNorm)
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "HarmonizR", "limBE")
   names(norm_functions) <- norm_names
 
   # retrieve normalization methods & check if all methods available
@@ -534,6 +553,20 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
   } else {
     message("All available normalization methods will be performed.")
     methods <- norm_names
+  }
+
+  # check if IRS, limBE or HarmonizR can be executed
+  batch <-S4Vectors::metadata(se)$batch
+  if(sum(c("limBE", "IRS", "HarmonizR") %in% methods) > 0){
+    if(is.null(batch)){
+      stop("No batch specified! Batch need to be specified for limBE, IRS, and HarmonizR in the SummarizedExperiment under metadata(se)$batch!")
+    }
+  }
+  refs <- S4Vectors::metadata(se)$refs
+  if("IRS" %in% methods){
+    if(is.null(refs)){
+      stop("No reference samples specified! Reference samples need to be specified for IRS in the SummarizedExperiment under metadata(se)$refs!")
+    }
   }
 
   # normalization

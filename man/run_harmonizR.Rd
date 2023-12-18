@@ -8,7 +8,6 @@ run_harmonizR(
   se,
   ain = "raw",
   aout = "HarmonizR_ComBat",
-  batch_column = NULL,
   algorithm = "ComBat",
   combat_mode = 1
 )
@@ -19,8 +18,6 @@ run_harmonizR(
 \item{ain}{String which assay should be used as input (default raw)}
 
 \item{aout}{String which assay should be used to save normalized data (default HarmonizR_ComBat)}
-
-\item{batch_column}{column name of batch (if NULL, batch saved in SummarizedExperiment will be taken)}
 
 \item{algorithm}{String specifying which algorithm should be used (ComBat or limma)}
 
