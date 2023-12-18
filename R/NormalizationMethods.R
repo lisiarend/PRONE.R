@@ -406,7 +406,7 @@ eigenMSNorm <- function(se, ain="log2", aout="EigenMS"){
   prot.info <- cbind(data.frame(SummarizedExperiment::rowData(se)$Protein.IDs), data.frame(SummarizedExperiment::rowData(se)$Protein.IDs))
   colnames(prot.info) <- c("pepIDs", "prID")
   condition <- S4Vectors::metadata(se)$condition
-  grps <- factor(data.table::as.data.table(SummarizedExperiment::colData(se))[, condition], levels = unique(data.table::as.data.table(SummarizedExperiment::colData(se))[, condition]))
+  grps <- factor(data.table::as.data.table(SummarizedExperiment::colData(se))[[condition]], levels = unique(data.table::as.data.table(SummarizedExperiment::colData(se))[[condition]]))
   ints_eig1 <- eig_norm1(m=dt, treatment=grps, prot.info = prot.info)
   ints_norm <- eig_norm2(rv=ints_eig1)
   # present

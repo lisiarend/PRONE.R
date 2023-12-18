@@ -355,7 +355,7 @@ eig_norm1 = function(m, treatment, prot.info, write_to_file=''){
      } else {
       colnames(TREAT) = colnames(treatment)
     }
-    #attach(TREAT)
+    attach(TREAT)
 
     mod.c = stats::model.matrix(lm.fm$lm.formula, data=TREAT, eval(parse(text=lm.fm$lm.params)))
 	  Y.c = as.matrix(complete)
