@@ -430,7 +430,7 @@ plot_ROC_AUC_spiked <- function(se, de_res, ain = NULL, comparisons = NULL){
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
   col_vector <- rev(col_vector[54:73])
 
-  roc <- ggplot2::ggplot(dt, ggplot2::aes(d=get("Truth"), m=get("P.Adj"), color = get("Assay"))) +
+  roc <- ggplot2::ggplot(dt, ggplot2::aes(d=get("Truth"), m=get("P.Adj"), color = Assay)) +
     plotROC::geom_roc(n.cuts = cuts, labelround = round) +
     ggplot2::ylim(ymin, ymax) +
     ggplot2::xlab ("FPR") +
