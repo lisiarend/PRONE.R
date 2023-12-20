@@ -413,7 +413,7 @@ plot_ROC_AUC_spiked <- function(se, de_res, ain = NULL, comparisons = NULL){
   rowdata <- data.table::as.data.table(SummarizedExperiment::rowData(se))
   truth <- data.table::data.table(Protein.IDs = rowdata$Protein.IDs, spike = rowdata[,spike])
   colnames(truth) <- c("Protein.IDs", spike)
-  truth$Truth <- ifelse(truth[,get(spike)] == spike_val, 1, 0)
+  truth$Truth <- ifelse(truth[,spike] == spike_val, 1, 0)
 
   dt <- merge(p.adj, truth, by ="Protein.IDs")
   dt <- dt[order(dt$P.Adj, decreasing = TRUE),]
