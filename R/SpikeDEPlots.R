@@ -406,7 +406,7 @@ plot_ROC_AUC_spiked <- function(se, de_res, ain = NULL, comparisons = NULL){
   de_res <- de_res[de_res$Comparison %in% comparisons,]
 
   # extract adjusted p-values from limma
-  p.adj <- data.table::data.table("Protein.IDs" = de_res$Protein.IDs, "P.Adj" = de_res$adj.P.Val, "Method" = de_res$Assay, "Comparison" = de_res$Comparison)
+  p.adj <- data.table::data.table("Protein.IDs" = de_res$Protein.IDs, "P.Adj" = de_res$adj.P.Val, "Assay" = de_res$Assay, "Comparison" = de_res$Comparison)
   # extract ground truth
   spike <- S4Vectors::metadata(se)$spike_column
   spike_val <- S4Vectors::metadata(se)$spike_value
