@@ -156,6 +156,47 @@ plot_TP_FP_spiked_box <- function(stats, ain = NULL, comparisons = NULL){
   return(p)
 }
 
+#' Scatterplot of true positives and false positives (median with errorbars as Q1, and Q3) for all comparisons
+#'
+#' @param stats data table with multiple metrics of the DE results (resulting of get_spiked_stats_DE)
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in stats)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in stats)
+#'
+#' @return ggplot object
+#' @export
+#'
+plot_TP_FP_spiked_scatter <- function(stats, ain = NULL, comparisons = NULL){
+  # check stats, ain, comparisons
+  tmp <- check_stats_spiked_DE_parameters(stats, ain, comparisons)
+  stats <- tmp[[1]]
+  ain <- tmp[[2]]
+  comparisons <- tmp[[3]]
+
+  dt <- stats[, c("Assay", "Comparison", "TP", "FP")]
+  dt <- dt[dt$Assay %in% ain,]
+  dt <- dt[dt$Comparison %in% comparisons,]
+
+  dt <- stats[,c("Method", "Comparison", "TP", "FP"), with =FALSE]
+  dt$TP <- as.integer(dt$TP)
+  dt$FP <- as.integer(dt$FP)
+  summarized_stats <- dt %>% dplyr::group_by(Assay) %>% dplyr::summarize(Median_TP = stats::median(TP, na.rm = TRUE), Median_FP = stats::median(FP, na.rm = TRUE), Q1_TP = stats::quantile(TP, c(0.25), na.rm = TRUE), Q3_TP = stats::quantile(TP,c(0.75), na.rm = TRUE),Q1_FP = stats::quantile(FP, c(0.25), na.rm = TRUE), Q3_FP = stats::quantile(FP,c(0.75), na.rm = TRUE))
+
+  # colors
+  qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
+  col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  col_vector <- rev(col_vector[54:73])
+
+  p <- ggplot2::ggplot(summarized_stats, ggplot2::aes(x = Median_TP, y = Median_FP, color = Assay)) +
+    ggplot2::geom_point(size = 6, shape = 15) +
+    ggplot2::geom_errorbar(ggplot2::aes(ymin = Q1_FP, ymax = Q3_FP), linewidth = 1) +
+    ggplot2::scale_y_continuous(trans = "log10", labels = scales::scientific) +
+    ggplot2::geom_errorbarh(ggplot2::aes(xmin = Q1_TP, xmax = Q3_TP), linewidth = 1) +
+    ggplot2::scale_x_continuous(trans = "log10", labels = scales::scientific) +
+    ggplot2::scale_color_manual(name = "Normalization", values = col_vector) +
+    ggplot2::labs(x = "log10(TPs)", y = "log10(FPs)")
+  return(p)
+}
+
 #' Boxplot of log fold changes of spike-in and background proteins for specific normalization methods and comparisons. The ground truth (calculated based on the concentrations of the spike-ins) is shown as a horizontal line.
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
@@ -344,6 +385,73 @@ plot_logFC_thresholds_spiked <- function(se, de_res, condition, ain = NULL, comp
 }
 
 
+#' Plot ROC curve and barplot of AUC values for each method for a specific comparion or for all comparisons
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param de_res data table resulting of run_DE
+#' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in stats)
+#' @param comparisons Vector of comparisons (must be valid comparisons saved in stats)
+#'
+#' @return list of ggplot objects
+#' @export
+#'
+plot_ROC_AUC_spiked <- function(se, de_res, ain = NULL, comparisons = NULL){
+  # check input
+  tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
+  stats <- tmp[[1]]
+  ain <- tmp[[2]]
+  comparisons <- tmp[[3]]
+
+  de_res <- de_res[de_res$Assay %in% ain,]
+  de_res <- de_res[de_res$Comparison %in% comparisons,]
+
+  # extract adjusted p-values from limma
+  p.adj <- data.table::data.table("Protein.IDs" = de_res$Protein.IDs, "P.Adj" = de_res$adj.P.Val, "Method" = de_res$Assay, "Comparison" = de_res$Comparison)
+  # extract ground truth
+  spike <- S4Vectors::metadata(se)$spike_column
+  spike_val <- S4Vectors::metadata(se)$spike_value
+  rowdata <- data.table::as.data.table(SummarizedExperiment::rowData(se))
+  truth <- data.table::data.table(Protein.IDs = rowdata$Protein.IDs, spike = rowdata[,get(spike)])
+  colnames(truth) <- c("Protein.IDs", spike)
+  truth$Truth <- ifelse(truth[,get(spike)] == spike_val, 1, 0)
+
+  dt <- merge(p.adj, truth, by ="Protein.IDs")
+  dt <- dt[order(dt$P.Adj, decreasing = TRUE),]
+
+  cuts <- 0
+  round <- 3
+  ymin <- 0
+  ymax <- 1
+
+  dt$P.Adj <- 1 - as.numeric(dt$P.Adj)
+
+  # colors
+  qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
+  col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  col_vector <- rev(col_vector[54:73])
+
+  roc <- ggplot2::ggplot(dt, ggplot2::aes(d=get("Truth"), m=get("P.Adj"), color = get("Assay"))) +
+    plotROC::geom_roc(n.cuts = cuts, labelround = round) +
+    ggplot2::ylim(ymin, ymax) +
+    ggplot2::xlab ("FPR") +
+    ggplot2::ylab("TPR") +
+    ggplot2::scale_color_manual(name = "Normalization", values =col_vector) +
+    ggplot2::facet_wrap(~Comparison)
+
+  auc_dt <- plotROC::calc_auc(roc)
+  auc_bars <- ggplot2::ggplot(auc_dt, ggplot2::aes(x=get("Assay"), y=get("AUC"), fill=get("Assay"))) +
+    ggplot2::geom_bar(stat = "identity") +
+    ggplot2::facet_wrap(~Comparison) +
+    ggplot2::scale_fill_manual(name = "Normalization", values = col_vector) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust=0.5)) +
+    ggplot2::labs(x = "Normalization")
+  auc_box <- ggplot2::ggplot(auc_dt, ggplot2::aes(x = Assay, y=AUC, fill=Assay)) +
+    ggplot2::geom_boxplot() +
+    ggplot2::scale_fill_manual(name = "Normalization", values = col_vector) +
+    ggplot2::labs(x = "Normalization")
+
+  return(list("ROC" = roc, "AUC_bars" = auc_bars, "AUC_box" = auc_box,"AUC_dt" = auc_dt))
+}
 
 
 

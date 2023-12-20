@@ -507,7 +507,7 @@ limmaNorm <- function(se, ain = "log2", aout = "limBE"){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
   coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
   batch <- S4Vectors::metadata(se)$batch
-  dt_batch <- limma::removeBatchEffect(dt, batch = batch_column)
+  dt_batch <- limma::removeBatchEffect(dt, batch = batch)
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(dt_batch)
   return(se)
 }

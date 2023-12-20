@@ -394,3 +394,6 @@ plot_overview_DE_tile <- function(de_res, ain = NULL, comparisons = NULL){
     ggplot2::scale_fill_distiller(name = "DE Proteins", direction = 1)
   return(p)
 }
+
+
+

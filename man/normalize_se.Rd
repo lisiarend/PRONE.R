@@ -4,7 +4,7 @@
 \alias{normalize_se}
 \title{Normalize SummarizedExperiment object using single normalization methods or specified combinations of normalization methods}
 \usage{
-normalize_se(se, methods, combination_pattern = "_on_")
+normalize_se(se, methods, combination_pattern = "_on_", gamma.0 = 0.5)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
@@ -12,6 +12,8 @@ normalize_se(se, methods, combination_pattern = "_on_")
 \item{methods}{Vector of normalization methods to apply for normalizing the proteomics data of the SummarizedExperiment object (identifier of normalization methods can be retrieved using get_all_normalization_methods())}
 
 \item{combination_pattern}{String specifying how normalization methods are combined. For instance, methods = c("IRS", "Median_on_IRS"), combination_pattern = "_on_".}
+
+\item{gamma.0}{Numeric representing the exponent of the weighted density of RobNorm normalization. When the sample size is small, the fitted population of some proteins could be locally trapped such that the variance of those proteins was very small under a large gamma. To avoid this, a small gamma is recommended. When sample size smaller than 40, then set gamma to 0.5 or 0.1.}
 }
 \value{
 SummarizedExperiment object with normalized data saved as assays

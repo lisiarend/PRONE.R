@@ -38,7 +38,7 @@ impute_se <- function(se, ain = NULL, condition = NULL){
     # Perform knn imputation using the MSnBase impute method
     MAR_dt <- original_dt[MAR,,drop=FALSE] # use Msnbase impute method with fun="knn
     # Use MsnSet::impute function
-    MSnSet_dt <- new("MSnSet",exprs=as.matrix(MAR_dt))
+    MSnSet_dt <- methods::new("MSnSet",exprs=as.matrix(MAR_dt))
     MsnSet_imputed <-  MSnbase::impute(MSnSet_dt,method="knn")
     MAR_dt <- MSnbase::exprs(MsnSet_imputed)
 
@@ -58,14 +58,14 @@ impute_se <- function(se, ain = NULL, condition = NULL){
       tidyr::gather(Column, Intensity, -ID) %>%
       dplyr::filter(!is.na(Intensity)) %>%
       dplyr::group_by(Column) %>%
-      dplyr::summarise(mean = mean(Intensity), median = median(Intensity), sd = sd(Intensity), n = n(), infin = nrow(MNAR_dt) - n)
+      dplyr::summarise(mean = mean(Intensity), median = stats::median(Intensity), sd = stats::sd(Intensity), n = dplyr::n(), infin = nrow(MNAR_dt) - n)
 
     names(stat) <- c("Column", "mean", "median", "sd", "n", "infin")
     # Impute missing values by random draws from a distribution
     # which is left-shifted by parameter 'shift' * sd and scaled by parameter 'scale' * sd.
     for (a in seq_len(nrow(stat))){
       MNAR_dt[is.na(MNAR_dt[, stat[, "Column"][[1]][a]]), stat[, "Column"][[1]][a]] <-
-        rnorm(stat$infin[a],
+        stats::rnorm(stat$infin[a],
               mean = stat$median[a] - shift * stat$sd[a],
               sd = stat$sd[a] * scale)
     }
