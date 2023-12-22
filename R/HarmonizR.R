@@ -41,6 +41,7 @@ prepare_data_for_harmonizR <- function(se, ain = "raw", batch_column = NULL){
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
 #' @param ain String which assay should be used as input (default raw)
 #' @param aout String which assay should be used to save normalized data (default HarmonizR_ComBat)
+#' @param batch_column  column name of batch (if NULL, batch saved in SummarizedExperiment will be taken)
 #' @param algorithm String specifying which algorithm should be used (ComBat or limma)
 #' @param combat_mode Integer speciying which ComBat mode should be executed (1,2,3,4)
 #'
@@ -53,7 +54,7 @@ prepare_data_for_harmonizR <- function(se, ain = "raw", batch_column = NULL){
 #' combat_mode = 4 -> par.prior = FALSE, mean.only = TRUE
 #' par.prior -> TRUE indicates parametric adjustments will be used
 #' mean.only -> TRUE indicates that ComBat only corrects the mean of the batch effect (no scale adjustment)
-run_harmonizR <- function(se, ain = "raw", aout = "HarmonizR_ComBat", algorithm = "ComBat", combat_mode = 1){
+run_harmonizR <- function(se, ain = "raw", aout = "HarmonizR_ComBat", batch_column = NULL, algorithm = "ComBat", combat_mode = 1){
   # Check input
   stopifnot(algorithm %in% c("ComBat", "limma"))
   stopifnot(combat_mode %in% c(1,2,3,4))
