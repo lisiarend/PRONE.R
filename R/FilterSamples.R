@@ -154,7 +154,7 @@ plot_nr_prot_samples <- function(se, ain="raw", color_by = NULL, label_by = NULL
 #' @return list of a ggplot object and the dataframe of outliers
 #' @export
 #'
-plot_tot_int_samples <- function(se, ain="raw", color_by = NULL, label_by){
+plot_tot_int_samples <- function(se, ain="raw", color_by = NULL, label_by = NULL){
   # get color and label values
   color_by <- get_color_value(se, color_by)
   tmp <- get_label_value(se, label_by)
