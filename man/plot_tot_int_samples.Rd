@@ -4,7 +4,7 @@
 \alias{plot_tot_int_samples}
 \title{Plot total protein intensity per sample}
 \usage{
-plot_tot_int_samples(se, ain = "raw", color_by = NULL, label_by)
+plot_tot_int_samples(se, ain = "raw", color_by = NULL, label_by = NULL)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}

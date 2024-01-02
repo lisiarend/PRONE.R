@@ -155,7 +155,7 @@ irsNorm <- function(se, ain="raw", aout="IRS"){
   # separate data by batch
   dt_list <- lapply(unique(md[,batch]), function(b){
     md_chunk <- md[md[,batch] == b,]
-    dt_chunk <- dt[, md_chunk$Column, with=FALSE]
+    dt_chunk <- dt[, md_chunk$Column, with = FALSE]
     return(dt_chunk)
   })
   names(dt_list) <- unique(md[,batch])
@@ -667,9 +667,24 @@ normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.
   if(!is.null(combination_pattern)){
     if(length(comb_methods) > 0){
       for(m in comb_methods){
-        method <- strsplit(m, combination_pattern)[[1]][1]
-        ain <- strsplit(m, combination_pattern)[[1]][2]
+        methods_split <- strsplit(m, combination_pattern)[[1]]
+
+        # Initialize method and ain with the last two elements
+        length_split <- length(methods_split)
+        ain <- methods_split[length_split]
+        method <- methods_split[length_split - 1]
         se <- normalize_se_combination(se, c(method), c(ain), combination_pattern, gamma.0 = gamma.0)
+
+        # If there are more than two methods in the combination, process the rest
+        if (length(methods_split) > 2) {
+          for (i in (length_split - 2):1) {
+            ain <- paste(method, ain, sep = combination_pattern)
+            method <- methods_split[i]
+
+            # Apply the subsequent combination
+            se <- normalize_se_combination(se, c(method), c(ain), combination_pattern, gamma.0 = gamma.0)
+          }
+        }
       }
     }
   }

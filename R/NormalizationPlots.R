@@ -539,7 +539,7 @@ plot_intragroup_correlation <- function(se, ain = NULL, condition = NULL, method
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
 #' @param ain Vector of strings which assay should be used as input (default NULL).
 #'            If NULL then all normalization of the se object are plotted next to each other.
-#' @param condition column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
+#' @param condition Column name of condition (if NULL, condition saved in SummarizedExperiment will be taken)
 #' @param diff Boolean indicating whether to visualize the reduction of intragroup variation (PCV) compared to "log" (TRUE) or a normal boxplot of intragroup variation (PCV) for each normalization method (FALSE).
 #'
 #' @return ggplot object (boxplot)

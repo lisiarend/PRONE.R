@@ -46,14 +46,17 @@ get_color_value <- function(se, color_by){
       color_by <- S4Vectors::metadata(se)$condition
       message("Condition of SummarizedExperiment used!")
     }
-  } else if(color_by == "No"){
-    color_by <- NULL
-    message("No color bar added.")
-  } else {
+  } else if(length(color_by)==1){
+    if(color_by == "No"){
+      color_by <- NULL
+      message("No color bar added.")
+    }
+  }
+  if(!is.null(color_by)){
     #check if color_by a valid column of the SummarizedExperiment object
     cols <- colnames(data.table::as.data.table(SummarizedExperiment::colData(se)))
-    if(!color_by %in% cols){
-      stop("Color_by value not a valid column in the SummarizedExperiment object!")
+    if(sum(!color_by %in% cols) > 0){
+      stop("The color_by value(s) not a valid column in the SummarizedExperiment object!")
     }
   }
   return(color_by)

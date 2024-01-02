@@ -6,8 +6,8 @@
 \usage{
 plot_markers_boxplots(
   se,
-  ain,
   markers,
+  ain = NULL,
   id_column = "Protein.IDs",
   color_by = NULL,
   shape_by = NULL,
@@ -18,9 +18,9 @@ plot_markers_boxplots(
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
 
-\item{ain}{Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)}
+\item{markers}{Vector of the IDs of the markers to plot}
 
-\item{markers}{vector of the IDs of the markers to plot}
+\item{ain}{Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)}
 
 \item{id_column}{String specifying the column of the rowData of the SummarizedExperiment object which includes the IDs of the markers}
 
