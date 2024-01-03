@@ -1,5 +1,5 @@
 
-#' Export the SummarizedExperiment object, the meta data, and the normalized data
+#' Export the SummarizedExperiment object, the meta data, and the normalized data.
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
 #' @param out_dir Path of output directory

@@ -507,7 +507,8 @@ limmaNorm <- function(se, ain = "log2", aout = "limBE"){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
   coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
   batch <- S4Vectors::metadata(se)$batch
-  dt_batch <- limma::removeBatchEffect(dt, batch = batch)
+  batch_vector <- coldata[[batch]]
+  dt_batch <- limma::removeBatchEffect(dt, batch = batch_vector)
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(dt_batch)
   return(se)
 }
@@ -522,7 +523,7 @@ limmaNorm <- function(se, ain = "log2", aout = "limBE"){
 #'
 get_normalization_methods <- function(){
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "HarmonizR", "limBE")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "limBE")
   return(norm_names)
 }
 
@@ -539,9 +540,9 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
   # vector with available normalization methods
   norm_functions <- norm_functions <- list(globalMeanNorm, globalMedianNorm, medianNorm, meanNorm, irsNorm,
                                            quantileNorm, vsnNorm, loessFNorm, loessCycNorm, rlrNorm,
-                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, run_harmonizR, limmaNorm)
+                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, limmaNorm)
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "HarmonizR", "limBE")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "limBE")
   names(norm_functions) <- norm_names
 
   # retrieve normalization methods & check if all methods available
@@ -555,11 +556,11 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
     methods <- norm_names
   }
 
-  # check if IRS, limBE or HarmonizR can be executed
+  # check if IRS or limBE can be executed
   batch <-S4Vectors::metadata(se)$batch
-  if(sum(c("limBE", "IRS", "HarmonizR") %in% methods) > 0){
+  if(sum(c("limBE", "IRS") %in% methods) > 0){
     if(is.null(batch)){
-      stop("No batch specified! Batch need to be specified for limBE, IRS, and HarmonizR in the SummarizedExperiment under metadata(se)$batch!")
+      stop("No batch specified! Batch need to be specified for limBE, IRS in the SummarizedExperiment under metadata(se)$batch!")
     }
   }
   refs <- S4Vectors::metadata(se)$refs
