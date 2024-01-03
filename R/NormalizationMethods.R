@@ -153,12 +153,12 @@ irsNorm <- function(se, ain="raw", aout="IRS"){
   # get md of reference samples
   refs_md <- md[md$Column %in% refs,]
   # separate data by batch
-  dt_list <- lapply(unique(md[,batch]), function(b){
-    md_chunk <- md[md[,batch] == b,]
-    dt_chunk <- dt[, md_chunk$Column, with = FALSE]
+  dt_list <- lapply(unique(md[[batch]]), function(b){
+    md_chunk <- md[md[[batch]] == b,]
+    dt_chunk <- subset(dt, select = md_chunk$Column)
     return(dt_chunk)
   })
-  names(dt_list) <- unique(md[,batch])
+  names(dt_list) <- unique(md[[batch]])
   # check if ref_samples have been specified
   if (is.null(refs)){
     # create mock channel with rowsums from each frame
@@ -168,8 +168,8 @@ irsNorm <- function(se, ain="raw", aout="IRS"){
     irs <- do.call(cbind, irs)
   } else {
     # take reference sample intensities
-    irs <- dt[, refs_md$Column, with=FALSE]
-    colnames(irs) <- as.character(refs_md[refs_md$Column %in% refs,][,batch])
+    irs <- subset(dt, select = refs_md$Column)
+    colnames(irs) <- as.character(refs_md[refs_md$Column %in% refs,][[batch]])
   }
   # get the geometric average intensity for each protein
   irs <- tibble::as_tibble(irs)
@@ -185,7 +185,7 @@ irsNorm <- function(se, ain="raw", aout="IRS"){
   # reconstruct data after irs normalization
   dt_irs <- do.call(cbind, dt_irs_list)
   dt_irs <- data.table::as.data.table(dt_irs)
-  dt_irs <- dt_irs[, colnames(dt), with = FALSE]
+  dt_irs <- subset(dt_irs, select = colnames(dt))
   SummarizedExperiment::assay(se, aout, FALSE) <- log2(dt_irs)
   return(se)
 }
