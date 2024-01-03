@@ -47,7 +47,7 @@ plot_identified_spiked_proteins <- function(se, color_by = NULL, label_by = NULL
     # color vector
     qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
     col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-    col_vector <- rev(col_vector[54:73])
+    col_vector <- rev(col_vector[54:100])
 
     # Plot
     p <- ggplot2::ggplot(stats, ggplot2::aes(x=get("Label"), y=get("Spiked"), group = get(color_by), fill=get(color_by), label=get("Spiked"))) +

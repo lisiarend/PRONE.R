@@ -184,7 +184,7 @@ plot_TP_FP_spiked_scatter <- function(stats, ain = NULL, comparisons = NULL){
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:73])
+  col_vector <- rev(col_vector[54:100])
 
   p <- ggplot2::ggplot(summarized_stats, ggplot2::aes(x = Median_TP, y = Median_FP, color = Assay)) +
     ggplot2::geom_point(size = 6, shape = 15) +
@@ -364,7 +364,7 @@ plot_logFC_thresholds_spiked <- function(se, de_res, condition, ain = NULL, comp
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual",]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:73])
+  col_vector <- rev(col_vector[54:100])
 
   # plot
   p_tp <- ggplot2::ggplot(stats, ggplot2::aes(x = get("logFCthr"), y= get("TP"), color = get("Assay"))) +
@@ -428,7 +428,7 @@ plot_ROC_AUC_spiked <- function(se, de_res, ain = NULL, comparisons = NULL){
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:73])
+  col_vector <- rev(col_vector[54:100])
 
   roc <- ggplot2::ggplot(dt, ggplot2::aes(d=get("Truth"), m=get("P.Adj"), color = Assay)) +
     plotROC::geom_roc(n.cuts = cuts, labelround = round) +
