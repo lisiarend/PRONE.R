@@ -77,7 +77,7 @@ remove_reference_samples <- function(se){
     rm <- ncol(se) - ncol(se_subset)
     message(paste0(rm, " reference samples removed from the SummarizedExperiment object."))
     if(!is.null(levels(se[[condition]]))){
-      se[[condition]] <- droplevels(se[[condition]])
+      se_subset[[condition]] <- droplevels(se_subset[[condition]])
     }
     return(se_subset)
   }
