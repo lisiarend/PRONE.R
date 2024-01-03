@@ -123,7 +123,7 @@ plot_nr_prot_samples <- function(se, ain="raw", color_by = NULL, label_by = NULL
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   if(is.null(color_by)){
@@ -184,7 +184,7 @@ plot_tot_int_samples <- function(se, ain="raw", color_by = NULL, label_by = NULL
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   if(is.null(color_by)){
@@ -247,7 +247,7 @@ detect_outliers_POMA <- function(se, ain="raw", condition = NULL, method="euclid
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # modify plots
   poma_res$polygon_plot <- poma_res$polygon_plot +

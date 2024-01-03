@@ -152,7 +152,7 @@ plot_boxplots <- function(se, ain = NULL, color_by = NULL, label_by = NULL, face
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   if(facet_norm){
     p <- ggplot2::ggplot(melted_dt, ggplot2::aes(x=get("Intensity"), y=get(label_by), fill=get(color_by))) +
@@ -211,7 +211,7 @@ plot_densities <- function(se, ain = NULL, color_by = NULL, facet_norm = TRUE, n
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   if(facet_norm){
     p <- ggplot2::ggplot(melted_dt, ggplot2::aes(x=get("Intensity"), color=get(color_by))) +
@@ -279,7 +279,7 @@ plot_PCA <- function(se, ain=NULL, color_by = NULL, label_by = NULL, shape_by = 
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   if(facet_norm){
     # facet by normalization method
@@ -521,7 +521,7 @@ plot_intragroup_correlation <- function(se, ain = NULL, condition = NULL, method
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   p <- ggplot2::ggplot(cor_intra, ggplot2::aes(x=get("Normalization"), y=get("Correlation"), fill=get("Normalization"))) +
@@ -571,7 +571,7 @@ plot_intragroup_PCV <- function(se, ain = NULL, condition = NULL, diff = FALSE){
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   if(diff){
@@ -637,7 +637,7 @@ plot_intragroup_PMAD <- function(se, ain=NULL, condition = NULL, diff = FALSE){
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   if(diff){
@@ -704,7 +704,7 @@ plot_intragroup_PEV <- function(se, ain=NULL, condition = NULL, diff = FALSE){
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   if(diff){

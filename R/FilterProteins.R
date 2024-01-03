@@ -151,7 +151,7 @@ plot_NA_heatmap <- function(se, color_by = NULL, label_by = NULL, cluster_sample
 
     qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
     col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-    col_vector <- rev(col_vector[54:100])
+    col_vector <- rev(col_vector)
 
     condition_colors <- col_vector[1:length(unique(annotation_col[, color_by]))]
     names(condition_colors) <- unique(annotation_col[, color_by])

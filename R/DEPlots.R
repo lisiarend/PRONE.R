@@ -142,7 +142,7 @@ plot_heatmap_DE <- function(se, de_res, ain, comparison, condition = NULL, label
       # color vector
       qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
       col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-      col_vector <- rev(col_vector[54:100])
+      col_vector <- rev(col_vector)
 
       # TODO: add protein groups or gene names (instead of ID numbers)
       # Heatmap annotation
@@ -352,7 +352,7 @@ plot_coverage_DE_markers <- function(se, de_res, ain, markers, id_column = "Prot
   # color vector
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   p <- ggplot2::ggplot(stats, ggplot2::aes(x = get("Assay"), y = get("Coverage"), fill = get("Assay"))) +

@@ -37,7 +37,7 @@ plot_condition_overview <- function(se, condition = NULL){
   # colors
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual",]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # plot
   p <- ggplot2::ggplot(dt, ggplot2::aes(x=get(condition), y=get("n"), fill=get(condition))) +
@@ -101,7 +101,7 @@ plot_markers_boxplots <- function(se, markers, ain = NULL, id_column = "Protein.
   # color vector
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   # facet by normalization method
   plots <- list()
@@ -263,7 +263,7 @@ plot_heatmap <- function(se, ain = NULL, color_by = NULL, label_by = NULL, only_
   # color vector
   qual_col_pals <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
   col_vector <- unlist(mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  col_vector <- rev(col_vector[54:100])
+  col_vector <- rev(col_vector)
 
   if(!is.null(color_by)){
     # color generation for annotation
