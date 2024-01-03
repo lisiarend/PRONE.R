@@ -69,12 +69,16 @@ remove_samples_manually <- function(se, column, value){
 #'
 remove_reference_samples <- function(se){
   refs <- S4Vectors::metadata(se)$refs
+  condition <- metadata(se)$condition
   if(is.null(refs)){
     stop("No reference samples specified during data loading!")
   } else {
     se_subset <- se[,! se$Column %in% c(refs)]
     rm <- ncol(se) - ncol(se_subset)
     message(paste0(rm, " reference samples removed from the SummarizedExperiment object."))
+    if(!is.null(levels(se[[condition]]))){
+      se[[condition]] <- droplevels(se[[condition]])
+    }
     return(se_subset)
   }
 }
