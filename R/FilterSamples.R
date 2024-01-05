@@ -69,7 +69,7 @@ remove_samples_manually <- function(se, column, value){
 #'
 remove_reference_samples <- function(se){
   refs <- S4Vectors::metadata(se)$refs
-  condition <- metadata(se)$condition
+  condition <- S4Vectors::metadata(se)$condition
   if(is.null(refs)){
     stop("No reference samples specified during data loading!")
   } else {

@@ -174,7 +174,7 @@ plot_markers_boxplots <- function(se, markers, ain = NULL, id_column = "Protein.
 #' @param only_refs Logical, if TRUE, only reference samples (ComRef) are included in the plot
 #'
 #' @return ggplot object
-#'
+#' @export
 plot_upset <- function(se, color_by = NULL, label_by = NULL, mb.ratio = c(0.7,0.3), only_refs = FALSE){
 
   # get color and label values
@@ -232,7 +232,7 @@ plot_upset <- function(se, color_by = NULL, label_by = NULL, mb.ratio = c(0.7,0.
 #' @param only_refs Logical, if TRUE, only reference samples (ComRef) are included in the plot
 #'
 #' @return list of ggplot objects
-#'
+#' @export
 plot_heatmap <- function(se, ain = NULL, color_by = NULL, label_by = NULL, only_refs = FALSE){
   plots <- list()
 
@@ -317,7 +317,7 @@ plot_heatmap <- function(se, ain = NULL, color_by = NULL, label_by = NULL, only_
 #' @param label_by String specifying the column in the metadata used to label the samples for the UpSet plot
 #'
 #' @return list of ggplot objects
-#'
+#' @export
 plot_pairs_panels <- function(se, ain = NULL, condition = NULL, label_by = NULL){
   plots <- list()
   # check input

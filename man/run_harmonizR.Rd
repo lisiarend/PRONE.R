@@ -32,3 +32,11 @@ SummarizedExperiment containing the HarmonizR data as assay
 \description{
 HarmonizR proteomics data
 }
+\details{
+combat_mode = 1 -> par.prior = TRUE, mean.only = FALSE
+combat_mode = 2 -> par.prior = TRUE, mean.only = TRUE
+combat_mode = 3 -> par.prior = FALSE, mean.only = FALSE
+combat_mode = 4 -> par.prior = FALSE, mean.only = TRUE
+par.prior -> TRUE indicates parametric adjustments will be used
+mean.only -> TRUE indicates that ComBat only corrects the mean of the batch effect (no scale adjustment)
+}

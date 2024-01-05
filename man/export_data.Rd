@@ -2,7 +2,7 @@
 % Please edit documentation in R/Download.R
 \name{export_data}
 \alias{export_data}
-\title{Export the SummarizedExperiment object, the meta data, and the normalized data}
+\title{Export the SummarizedExperiment object, the meta data, and the normalized data.}
 \usage{
 export_data(se, out_dir, ain = NULL)
 }
@@ -15,5 +15,5 @@ export_data(se, out_dir, ain = NULL)
 If NULL then all assays of the se object are saved.}
 }
 \description{
-Export the SummarizedExperiment object, the meta data, and the normalized data
+Export the SummarizedExperiment object, the meta data, and the normalized data.
 }

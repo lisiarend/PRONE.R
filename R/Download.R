@@ -1,4 +1,3 @@
-
 #' Export the SummarizedExperiment object, the meta data, and the normalized data.
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
@@ -6,13 +5,15 @@
 #' @param ain Vector of strings which assay should be downloaded (default NULL).
 #'            If NULL then all assays of the se object are saved.
 #'
-#' @return
+#' @return NULL
+#' @export
+#'
 export_data <- function(se, out_dir, ain = NULL) {
   ain <- check_input_assays(se, ain)
 
   # Write column data
   message(".. saving meta_data.csv")
-  write.csv(data.frame(SummarizedExperiment::colData(se), check.names=F), file.path(out_dir, "meta_data.csv"), row.names = F)
+  utils::write.csv(data.frame(SummarizedExperiment::colData(se), check.names=F), file.path(out_dir, "meta_data.csv"), row.names = F)
 
   # Extract Assay Data: The assay data is the core data matrix (or matrices) in a SummarizedExperiment object.
   message(".. saving assays as .csv")
@@ -22,7 +23,7 @@ export_data <- function(se, out_dir, ain = NULL) {
     assay_data <- data.frame(SummarizedExperiment::assays(se)[[assay]])
     combined_data <- cbind(row_data, assay_data)
     combined_data$IDs <- NULL
-    write.csv(combined_data, file.path(out_dir, paste0(assay, "_normalized_data.csv")), row.names = F)
+    utils::write.csv(combined_data, file.path(out_dir, paste0(assay, "_normalized_data.csv")), row.names = F)
   }
   message(".. saving SummarizedExperiment as RDS file")
   # Save the SummarizedExperiment object as an RDS file

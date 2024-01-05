@@ -48,6 +48,7 @@ prepare_data_for_harmonizR <- function(se, ain = "raw", batch_column = NULL){
 #' @return SummarizedExperiment containing the HarmonizR data as assay
 #' @export
 #'
+#' @details
 #' combat_mode = 1 -> par.prior = TRUE, mean.only = FALSE
 #' combat_mode = 2 -> par.prior = TRUE, mean.only = TRUE
 #' combat_mode = 3 -> par.prior = FALSE, mean.only = FALSE
