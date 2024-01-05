@@ -236,7 +236,7 @@ plot_upset <- function(se, color_by = NULL, label_by = NULL, mb.ratio = c(0.7,0.
 plot_heatmap <- function(se, ain = NULL, color_by = NULL, label_by = NULL, only_refs = FALSE){
   plots <- list()
 
-  # check input
+    # check input
   ain <- check_input_assays(se, ain)
   if(is.null(ain)){
     return(NULL)
@@ -271,6 +271,7 @@ plot_heatmap <- function(se, ain = NULL, color_by = NULL, label_by = NULL, only_
     color_list <- list()
     for(col in c(color_by)){
       vals <- unique(df_anno[[col]])
+      vals <- vals[!is.na(vals)]
       colors <- col_vector[i:(i+length(vals)-1)]
       names(colors) <- vals
       i <- i+length(vals)
@@ -302,7 +303,8 @@ plot_heatmap <- function(se, ain = NULL, color_by = NULL, label_by = NULL, only_
                                  show_column_names = show_sample_names,
                                  top_annotation = top_anno,
                                  show_row_names = FALSE,
-                                 cluster_columns = clustering)
+                                 cluster_columns = clustering,
+                                 use_raster = FALSE)
     plots[[ain]] <- p
   }
   return(plots)
