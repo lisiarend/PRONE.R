@@ -183,18 +183,18 @@ The combination pattern specifies which method to apply on top of the specified 
 #### Boxplots of Normalized Data
 
 ```{r}
-plot_boxplot(se_norm, ain = NULL, color_by = NULL, label_by = NULL, ncol = 3, facet_norm = TRUE)
+plot_boxplots(se_norm, ain = NULL, color_by = NULL, label_by = NULL, ncol = 3, facet_norm = TRUE)
 ```
 But you can also just plot a selection of normalization methods and color for instance by batch:
 
 ```{r}
-plot_boxplot(se_norm, ain = c("Mean", "Median"), color_by = "Condition", label_by = NULL, facet_norm = TRUE)
+plot_boxplots(se_norm, ain = c("Mean", "Median"), color_by = "Condition", label_by = NULL, facet_norm = TRUE)
 ```
 
 Another option that you have is to return the boxplots for each normalized data independently as a single ggplot object. For this, you need to set facet = FALSE:
 
 ```{r}
-plot_boxplot(se_norm, ain = c("Mean", "Median"), color_by = "Condition", label_by = NULL, facet_norm = FALSE)
+plot_boxplots(se_norm, ain = c("Mean", "Median"), color_by = "Condition", label_by = NULL, facet_norm = FALSE)
 ```
 #### Densities of Normalized Data
 
@@ -261,7 +261,6 @@ de_results <- run_DE(se = se_norm,
                      logFC_up = 1, 
                      logFC_down = -1, 
                      p_adj = TRUE, 
-                     p_adj_method = "BH", 
                      alpha = 0.05, 
                      B = 100, 
                      K = 500)

@@ -215,13 +215,14 @@ quantileNorm <- function(se, ain="log2", aout="Quantile"){
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
 #' @param ain String which assay should be used as input (default raw)
 #' @param aout String which assay should be used to save normalized data (default vsn)
+#' @param VSN_quantile Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression. (see vsn2 lts.quantile)
 #'
 #' @return SummarizedExperiment containing the vsn normalized data as assay
 #' @export
 #'
-vsnNorm <- function(se, ain="raw", aout="VSN"){
+vsnNorm <- function(se, ain="raw", aout="VSN", VSN_quantile = 0.9){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
-  norm_dt <- suppressMessages(limma::normalizeVSN(dt))
+  norm_dt <- suppressMessages(limma::normalizeVSN(dt, lts.quantile = VSN_quantile))
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
@@ -513,6 +514,110 @@ limmaNorm <- function(se, ain = "log2", aout = "limBE"){
   return(se)
 }
 
+#' Normics Normalization (Normics using VSN or using Median)
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
+#' @param ain String which assay should be used as input (default log2)
+#' @param aout String which assay should be used to save normalized data (default limBE)
+#' @param method String specifying the method to use (NORMICS or NORMICSmedian)
+#' @param reduce_correlation_by If the data is too big for the computation of the params, increase this parameter by 2,3,4.... The whole data will still be normalized, but the params are calculated on every second row etc.
+#' @param NormicsVSN_quantile The quantile that is used for the resistant least trimmed sum of squares regression. A value of 0.8 means focusing on the central 80\% of the data, reducing the influence of outliers.
+#' @param TMT_ratio Indicates if the data involves Tandem Mass Tag (TMT) ratio-based measurements (common in proteomics). If TRUE, the method may handle the data differently.
+#' @param top_x Number of reference proteins extracted for the calculation of parameters
+#'
+#' @return SummarizedExperiment containing the NormicsVSN/NormicsMedian normalized data as assay
+#' @export
+#'
+normicsNorm <- function(se, ain = "log2", aout = "NormicsVSN", method = "NormicsVSN", reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, TMT_ratio = FALSE, top_x = 50){
+  # check method
+  stopifnot(method %in% c("NormicsVSN", "NormicsMedian"))
+  dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
+  rowdata <- data.table::as.data.table(SummarizedExperiment::rowData(se))
+  # normalize on raw data not log2
+  if(ain != "raw"){
+    dt <- 2 ** dt
+  }
+  dt_reduced <- dt[seq(1, nrow(dt), by = reduce_correlation_by), ]
+  rowdata_reduced <- rowdata[seq(1, nrow(rowdata), by = reduce_correlation_by), ]
+  # create longlist
+  cols <- c("Protein_ID", "Rank_sum_RS", "Mean_correlation_MC", "Coefficient_of_variation_CV", "Variance_correlation_VC")
+  # use matrices for faster computation
+  dt_matrix <- as.matrix(dt_reduced)
+  # precompute means and variances to avoid recalculating them
+  means <- apply(dt_matrix, 1, mean, na.rm = TRUE)
+  variances <- apply(dt_matrix, 1, stats::var, na.rm = TRUE)
+  # initialize empty dataframe for longlist
+  longlist <- data.frame(matrix(ncol = length(cols), nrow = 0))
+  colnames(longlist) <- cols
+  # compute pairwise correlations
+  cor_matrix <- stats::cor(t(dt_matrix), method = "spearman", use = "pairwise.complete.obs")
+  cor_df <- as.data.frame(cor_matrix)
+  # populate longlist
+  for (i in 1:nrow(cor_df)){
+    # exclude self-correlation by removing the i-th column from the matrix
+    temp <- as.numeric(cor_df[i, -i])
+    CV <- ifelse(!TMT_ratio, sqrt(variances[i]) / means[i], sqrt(variances[i]))
+    # add row to longlist
+    longlist <- rbind(longlist,
+                      data.frame( Protein_ID = rowdata_reduced$Protein.IDs[i],
+                                  Rank_sum_RS = NA,
+                                  Mean_correlation_MC = mean(temp, na.rm = TRUE),
+                                  Coefficient_of_variation_CV = CV,
+                                  Variance_correlation_VC = stats::var(temp, na.rm = TRUE)))
+  }
+
+  # sort and determine rank sum
+  longlist <- longlist[order(longlist[[cols[4]]]), ]
+  longlist$Rank_sum_RS <- seq_len(nrow(longlist)) - 1
+  longlist <- longlist[order(-longlist[[cols[3]]]), ]
+  longlist$Rank_sum_RS <- longlist$Rank_sum_RS + seq_len(nrow(longlist)) - 1
+  longlist <- longlist[order(longlist[[cols[2]]]), ]
+
+    # extract top
+  shortlist <- longlist[1:top_x, ]
+
+  if(method == "NormicsVSN"){
+    # NORMICS VSN normalization
+    # generate subset of counts including just the top proteins
+    dt_ids <- cbind(dt, rowdata[,"Protein.IDs"])
+    colnames(dt_ids)[length(dt)+1] <- "Protein.IDs"
+    dt_shortlist <- dt_ids[dt_ids$Protein.IDs %in% shortlist$Protein_ID,]
+    dt_shortlist$Protein.IDs <- NULL
+    # get parameters
+    dt_to_norm <- Biobase::ExpressionSet(assayData = as.matrix(dt_shortlist))
+    fit <- vsn::vsn2(dt_to_norm, lts.quantile = NormicsVSN_quantile)
+    #params <- coef(fit)[1,,]
+    # normalize on complete proteins data
+    dt_to_norm <- Biobase::ExpressionSet(assayData = as.matrix(dt))
+    norm_data <- vsn::predict(fit, dt_to_norm, log2scale = TRUE)
+    norm_dt <- expressToDT(expr_data = norm_data,
+                                 column_names = colnames(dt),
+                                 row_names = rownames(dt))
+  } else {
+    # NORMICSmedian normalization
+    # calculate median ratios for shortlist proteins per column
+    dt_ids <- cbind(dt, rowdata[["Protein.IDs"]])
+    colnames(dt_ids)[length(dt)+1] <- "Protein.IDs"
+    dt_shortlist <- dt_ids[dt_ids$Protein.IDs %in% shortlist$Protein_ID,]
+    dt_shortlist$Protein.IDs <- NULL
+    ratios <- as.data.frame(lapply(dt_shortlist, stats::median, na.rm = TRUE), col.names = colnames(dt_shortlist))
+    # normalize on complete proteins data
+    dt <- as.data.frame(dt)
+    norm_dt <- dt
+    # iterate over the columns and perform calculations
+    for (j in seq_along(dt)) {
+      ri <- ratios[1, j]
+      norm_dt[, j] <- dt[, j] / ri * mean(as.numeric(ratios[1, ]), na.rm = TRUE)
+    }
+    # apply log2 transformation
+    norm_dt <- log2(norm_dt)
+    norm_dt <- tibToDF(norm_dt, colnames(norm_dt), rownames(norm_dt))
+  }
+  SummarizedExperiment::assay(se, aout, FALSE) <- norm_dt
+  return(se)
+}
+
 
 ## ----- Main Normalization Method Functions ----- ##
 
@@ -523,7 +628,7 @@ limmaNorm <- function(se, ain = "log2", aout = "limBE"){
 #'
 get_normalization_methods <- function(){
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "limBE")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "limBE", "NormicsVSN", "NormicsMedian")
   return(norm_names)
 }
 
@@ -532,17 +637,21 @@ get_normalization_methods <- function(){
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
 #' @param methods Vector of normalization methods to apply for normalizing the proteomics data of the SummarizedExperiment object (identifier of normalization methods can be retrieved using get_all_normalization_methods())
 #' @param gamma.0 Numeric representing the exponent of the weighted density of RobNorm normalization. When the sample size is small, the fitted population of some proteins could be locally trapped such that the variance of those proteins was very small under a large gamma. To avoid this, a small gamma is recommended. When sample size smaller than 40, then set gamma to 0.5 or 0.1.
+#' @param reduce_correlation_by If the data is too big for the computation of the params, increase this parameter by 2,3,4.... The whole data will still be normalized, but the params are calculated on every second row etc.
+#' @param NormicsVSN_quantile The quantile that is used for the resistant least trimmed sum of squares regression. A value of 0.8 means focusing on the central 80\% of the data, reducing the influence of outliers.
+#' @param top_x Number of reference proteins extracted for the calculation of parameters
+#' @param VSN_quantile Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression. (see vsn2 lts.quantile)
 #'
 #' @return SummarizedExperiment object with normalized data saved as assays
 #' @export
 #'
-normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
+normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9){
   # vector with available normalization methods
   norm_functions <- norm_functions <- list(globalMeanNorm, globalMedianNorm, medianNorm, meanNorm, irsNorm,
                                            quantileNorm, vsnNorm, loessFNorm, loessCycNorm, rlrNorm,
-                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, limmaNorm)
+                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, limmaNorm, normicsNorm, normicsNorm)
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "limBE")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "limBE", "NormicsVSN", "NormicsMedian")
   names(norm_functions) <- norm_names
 
   # retrieve normalization methods & check if all methods available
@@ -575,9 +684,14 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
     func <- norm_functions[[method]]
     if(method == "RobNorm"){
       se <- func(se, aout = method, gamma.0 = gamma.0)
+    } else if(method %in% c("NormicsVSN", "NormicsMedian")){
+      se <- func(se, aout = method, method = method, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x)
+    } else if(method == "VSN"){
+      se <- func(se, aout = method, VSN_quantile = VSN_quantile)
     } else {
       se <- func(se, aout = method)
     }
+
     # TODO: error handling
     message(paste0(method, " completed."))
   }
@@ -592,18 +706,22 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
 #' @param ains Vector of assays of SummarizedExperiment object to apply the normalization methods (e.g. if you want to perform Median normalization on IRS-normalized data)
 #' @param combination_pattern String to give name to combination of methods (e.g. IRS_on_Median --> "_on_")
 #' @param gamma.0 Numeric representing the exponent of the weighted density of RobNorm normalization. When the sample size is small, the fitted population of some proteins could be locally trapped such that the variance of those proteins was very small under a large gamma. To avoid this, a small gamma is recommended. When sample size smaller than 40, then set gamma to 0.5 or 0.1.
+#' @param reduce_correlation_by If the data is too big for the computation of the params, increase this parameter by 2,3,4.... The whole data will still be normalized, but the params are calculated on every second row etc.
+#' @param NormicsVSN_quantile The quantile that is used for the resistant least trimmed sum of squares regression. A value of 0.8 means focusing on the central 80\% of the data, reducing the influence of outliers.
+#' @param top_x Number of reference proteins extracted for the calculation of parameters
+#' @param VSN_quantile Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression. (see vsn2 lts.quantile)
 #'
 #' @return SummarizedExperiment object with normalized data saved as assays
 #' @export
 #'
- normalize_se_combination <- function(se, methods, ains, combination_pattern = "_on_", gamma.0 = 0.5){
+ normalize_se_combination <- function(se, methods, ains, combination_pattern = "_on_", gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9){
 
   # vector with available normalization methods
   norm_functions <- norm_functions <- list(globalMeanNorm, globalMedianNorm, medianNorm, meanNorm, irsNorm,
                                            quantileNorm, vsnNorm, loessFNorm, loessCycNorm, rlrNorm,
-                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm)
+                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, normicsNorm, normicsNorm)
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "NormicsVSN", "NormicsMedian")
   names(norm_functions) <- norm_names
 
   # retrieve normalization methods & check if all methods available
@@ -623,7 +741,7 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
     # check if ain already in se --> if not: perform now
     if(! ain %in% names(SummarizedExperiment::assays(se))){
       message(paste0(ain, " normalization not yet performed. Single ", ain, " normalization performed now."))
-      se <- normalize_se_single(se, methods = c(ain), gamma.0 = gamma.0)
+      se <- normalize_se_single(se, methods = c(ain), gamma.0 = gamma.0, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x)
     }
 
     for(method in methods){
@@ -631,6 +749,10 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
       func <- norm_functions[[method]]
       if(method == "RobNorm"){
         se <- func(se, ain = ain, aout = aout, gamma.0 = gamma.0)
+      } else if(method %in% c("NormicsVSN", "NormicsMedian")){
+        se <- func(se, aout = method, method = method, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x)
+      } else if(method == "VSN"){
+        se <- func(se, aout = method, VSN_quantile = VSN_quantile)
       } else {
         se <- func(se, ain = ain, aout = aout)
       }
@@ -647,11 +769,14 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5){
 #' @param methods Vector of normalization methods to apply for normalizing the proteomics data of the SummarizedExperiment object (identifier of normalization methods can be retrieved using get_all_normalization_methods())
 #' @param combination_pattern String specifying how normalization methods are combined. For instance, methods = c("IRS", "Median_on_IRS"), combination_pattern = "_on_".
 #' @param gamma.0 Numeric representing the exponent of the weighted density of RobNorm normalization. When the sample size is small, the fitted population of some proteins could be locally trapped such that the variance of those proteins was very small under a large gamma. To avoid this, a small gamma is recommended. When sample size smaller than 40, then set gamma to 0.5 or 0.1.
+#' @param reduce_correlation_by If the data is too big for the computation of the params, increase this parameter by 2,3,4.... The whole data will still be normalized, but the params are calculated on every second row etc.
+#' @param NormicsVSN_quantile The quantile that is used for the resistant least trimmed sum of squares regression. A value of 0.8 means focusing on the central 80\% of the data, reducing the influence of outliers.
+#' @param top_x Number of reference proteins extracted for the calculation of parameters
+#' @param VSN_quantile Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression (see vsn2 lts.quantile)
 #'
 #' @return SummarizedExperiment object with normalized data saved as assays
 #' @export
-#'
-normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.5){
+normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9){
   # extract combination of methods
   if(!is.null(combination_pattern)){
     comb_methods <- methods[stringr::str_detect(methods, combination_pattern)] #  combined methods
@@ -662,7 +787,7 @@ normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.
 
   # single normalization
   if(length(sing_methods) > 0){
-    se <- normalize_se_single(se, sing_methods, gamma.0 = gamma.0)
+    se <- normalize_se_single(se, sing_methods, gamma.0 = gamma.0, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x, VSN_quantile = VSN_quantile)
   }
   # combined normalization
   if(!is.null(combination_pattern)){
@@ -674,7 +799,7 @@ normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.
         length_split <- length(methods_split)
         ain <- methods_split[length_split]
         method <- methods_split[length_split - 1]
-        se <- normalize_se_combination(se, c(method), c(ain), combination_pattern, gamma.0 = gamma.0)
+        se <- normalize_se_combination(se, c(method), c(ain), combination_pattern, gamma.0 = gamma.0, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x, VSN_quantile = VSN_quantile)
 
         # If there are more than two methods in the combination, process the rest
         if (length(methods_split) > 2) {
@@ -683,7 +808,7 @@ normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.
             method <- methods_split[i]
 
             # Apply the subsequent combination
-            se <- normalize_se_combination(se, c(method), c(ain), combination_pattern, gamma.0 = gamma.0)
+            se <- normalize_se_combination(se, c(method), c(ain), combination_pattern, gamma.0 = gamma.0, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x, VSN_quantile = VSN_quantile)
           }
         }
       }
@@ -691,4 +816,7 @@ normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.
   }
   return(se)
 }
+
+
+
 

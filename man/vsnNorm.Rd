@@ -4,7 +4,7 @@
 \alias{vsnNorm}
 \title{Variance Stabilization Normalization of limma package}
 \usage{
-vsnNorm(se, ain = "raw", aout = "VSN")
+vsnNorm(se, ain = "raw", aout = "VSN", VSN_quantile = 0.9)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
@@ -12,6 +12,8 @@ vsnNorm(se, ain = "raw", aout = "VSN")
 \item{ain}{String which assay should be used as input (default raw)}
 
 \item{aout}{String which assay should be used to save normalized data (default vsn)}
+
+\item{VSN_quantile}{Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression. (see vsn2 lts.quantile)}
 }
 \value{
 SummarizedExperiment containing the vsn normalized data as assay

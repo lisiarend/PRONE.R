@@ -4,7 +4,16 @@
 \alias{normalize_se}
 \title{Normalize SummarizedExperiment object using single normalization methods or specified combinations of normalization methods}
 \usage{
-normalize_se(se, methods, combination_pattern = "_on_", gamma.0 = 0.5)
+normalize_se(
+  se,
+  methods,
+  combination_pattern = "_on_",
+  gamma.0 = 0.5,
+  reduce_correlation_by = 1,
+  NormicsVSN_quantile = 0.8,
+  top_x = 50,
+  VSN_quantile = 0.9
+)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
@@ -14,6 +23,14 @@ normalize_se(se, methods, combination_pattern = "_on_", gamma.0 = 0.5)
 \item{combination_pattern}{String specifying how normalization methods are combined. For instance, methods = c("IRS", "Median_on_IRS"), combination_pattern = "_on_".}
 
 \item{gamma.0}{Numeric representing the exponent of the weighted density of RobNorm normalization. When the sample size is small, the fitted population of some proteins could be locally trapped such that the variance of those proteins was very small under a large gamma. To avoid this, a small gamma is recommended. When sample size smaller than 40, then set gamma to 0.5 or 0.1.}
+
+\item{reduce_correlation_by}{If the data is too big for the computation of the params, increase this parameter by 2,3,4.... The whole data will still be normalized, but the params are calculated on every second row etc.}
+
+\item{NormicsVSN_quantile}{The quantile that is used for the resistant least trimmed sum of squares regression. A value of 0.8 means focusing on the central 80\% of the data, reducing the influence of outliers.}
+
+\item{top_x}{Number of reference proteins extracted for the calculation of parameters}
+
+\item{VSN_quantile}{Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression (see vsn2 lts.quantile)}
 }
 \value{
 SummarizedExperiment object with normalized data saved as assays

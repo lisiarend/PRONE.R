@@ -4,7 +4,14 @@
 \alias{perform_limma}
 \title{Fitting a linear model using limma}
 \usage{
-perform_limma(data, condition_vector, comparisons, covariate = NULL)
+perform_limma(
+  data,
+  condition_vector,
+  comparisons,
+  covariate = NULL,
+  trend = TRUE,
+  robust = TRUE
+)
 }
 \arguments{
 \item{data}{Data table of intensities (rows = proteins, cols = samples)}
@@ -14,6 +21,10 @@ perform_limma(data, condition_vector, comparisons, covariate = NULL)
 \item{comparisons}{Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)}
 
 \item{covariate}{String specifying which column to include as covariate into limma}
+
+\item{trend}{logical, should an intensity-dependent trend be allowed for the prior variance? If FALSE then the prior variance is constant. Alternatively, trend can be a row-wise numeric vector, which will be used as the covariate for the prior variance.}
+
+\item{robust}{logical, should the estimation of df.prior and var.prior be robustified against outlier sample variances?}
 }
 \value{
 eBayes object

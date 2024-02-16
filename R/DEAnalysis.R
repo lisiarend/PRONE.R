@@ -73,11 +73,13 @@ specify_comparisons <- function(se, condition = NULL, sep = NULL, control = NULL
 #' @param condition_vector Vector of experimental design specifying the condition(s) to compare
 #' @param comparisons Vector of comparisons that are performed in the DE analysis (from specify_comparisons method)
 #' @param covariate String specifying which column to include as covariate into limma
+#' @param trend logical, should an intensity-dependent trend be allowed for the prior variance? If FALSE then the prior variance is constant. Alternatively, trend can be a row-wise numeric vector, which will be used as the covariate for the prior variance.
+#' @param robust logical, should the estimation of df.prior and var.prior be robustified against outlier sample variances?
 #'
 #' @return eBayes object
 #' @export
 #'
-perform_limma <- function(data, condition_vector, comparisons, covariate = NULL){
+perform_limma <- function(data, condition_vector, comparisons, covariate = NULL, trend = TRUE, robust = TRUE){
   # Create design matrix
   groupsM <- as.factor(condition_vector)
   if(is.null(covariate)){
@@ -96,7 +98,7 @@ perform_limma <- function(data, condition_vector, comparisons, covariate = NULL)
 
   # Contrast fit and ebayes
   fit2 <- limma::contrasts.fit(fit, contr)
-  ebfit <- limma::eBayes(fit2, trend=TRUE, robust = TRUE)
+  ebfit <- limma::eBayes(fit2, trend=trend, robust = robust)
   return(ebfit)
 }
 
@@ -351,11 +353,13 @@ perform_DEqMS <- function(fit, se, logFC = TRUE, logFC_up = 1, logFC_down = -1, 
 #' @param alpha Threshold for adjusted p-values or p-values
 #' @param B Number of bootstrapping for ROTS
 #' @param K Number of top-ranked features for reproducibility optimization
+#' @param trend logical, should an intensity-dependent trend be allowed for the prior variance? If FALSE then the prior variance is constant. Alternatively, trend can be a row-wise numeric vector, which will be used as the covariate for the prior variance.
+#' @param robust logical, should the estimation of df.prior and var.prior be robustified against outlier sample variances?
 #'
 #' @return Data table of DE results
 #' @export
 #'
-run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05, B = 100, K = 500){
+run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05, B = 100, K = 500, trend = TRUE, robust = TRUE){
   # check parameters (if users are calling this function instead of run_DE)
   params <- check_DE_parameters(se, ain = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
   method <- params[["ain"]]
@@ -375,14 +379,14 @@ run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method =
   # run DE
   if(DE_method == "limma"){
     # run limma
-    fit <- perform_limma(data = dt, condition_vector = condition_vector, comparisons = comparisons, covariate = covariate)
+    fit <- perform_limma(data = dt, condition_vector = condition_vector, comparisons = comparisons, covariate = covariate, trend = trend, robust = robust)
     de_chunk <- extract_limma_DE(fit = fit, comparisons = comparisons, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha)
   } else if (DE_method == "ROTS"){
     # run ROTS
     de_chunk <- perform_ROTS(data = dt, condition = condition, comparisons = comparisons, condition_name = condition, coldata = data.table::as.data.table(SummarizedExperiment::colData(se)), logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
   } else if (DE_method == "DEqMS"){
     # first run limma model
-    fit <- perform_limma(data = dt, condition_vector = condition_vector, comparisons = comparisons, covariate = covariate)
+    fit <- perform_limma(data = dt, condition_vector = condition_vector, comparisons = comparisons, covariate = covariate, trend = trend, robust = robust)
     de_chunk <- perform_DEqMS(fit = fit, se = se, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha)
   }
 
@@ -437,11 +441,13 @@ run_DE_single <- function(se, method, comparisons, condition = NULL, DE_method =
 #' @param alpha Threshold for adjusted p-values or p-values
 #' @param B Number of bootstrapping for ROTS
 #' @param K Number of top-ranked features for reproducibility optimization
+#' @param trend logical, should an intensity-dependent trend be allowed for the prior variance? If FALSE then the prior variance is constant. Alternatively, trend can be a row-wise numeric vector, which will be used as the covariate for the prior variance.
+#' @param robust logical, should the estimation of df.prior and var.prior be robustified against outlier sample variances?
 #'
 #' @return Data table of DE results of selected normalized data sets
 #' @export
 #'
-run_DE <- function(se, comparisons, ain = NULL, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05, B = 100, K = 500){
+run_DE <- function(se, comparisons, ain = NULL, condition = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05, B = 100, K = 500, trend = TRUE, robust = TRUE){
   # check parameters
   params <- check_DE_parameters(se, ain = ain, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
   ain <- params[["ain"]]
@@ -455,7 +461,7 @@ run_DE <- function(se, comparisons, ain = NULL, condition = NULL, DE_method = "l
   # run DE
   de_res <- NULL
   for(method in c(ain)){
-    de_chunk <- run_DE_single(se, method = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K)
+    de_chunk <- run_DE_single(se, method = method, condition = condition, comparisons = comparisons, DE_method = DE_method, covariate = covariate, logFC = logFC, logFC_up = logFC_up, logFC_down = logFC_down, p_adj = p_adj, alpha = alpha, B = B, K = K, trend = trend, robust = robust)
     # add to overall results
     if(is.null(de_res)){
       de_res <- de_chunk

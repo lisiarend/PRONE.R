@@ -17,7 +17,9 @@ run_DE(
   p_adj = TRUE,
   alpha = 0.05,
   B = 100,
-  K = 500
+  K = 500,
+  trend = TRUE,
+  robust = TRUE
 )
 }
 \arguments{
@@ -47,6 +49,10 @@ If NULL then all normalization of the se object are plotted next to each other.}
 \item{B}{Number of bootstrapping for ROTS}
 
 \item{K}{Number of top-ranked features for reproducibility optimization}
+
+\item{trend}{logical, should an intensity-dependent trend be allowed for the prior variance? If FALSE then the prior variance is constant. Alternatively, trend can be a row-wise numeric vector, which will be used as the covariate for the prior variance.}
+
+\item{robust}{logical, should the estimation of df.prior and var.prior be robustified against outlier sample variances?}
 }
 \value{
 Data table of DE results of selected normalized data sets

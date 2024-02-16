@@ -147,6 +147,21 @@ get_facet_value <- function(se, facet_by){
   return(facet_by)
 }
 
+# transform for export -> TODO
+expressToDT <- function(expr_data, column_names, row_names) {
+  data_df <- data.table::as.data.table(t(data.frame(expr_data)))
+  colnames(data_df) <- column_names
+  rownames(data_df) <- row_names
+  return(data_df)
+}
+
+# transform for export -> TODO
+tibToDF <- function(expr_data, column_names, row_names) {
+  data_df <- data.table::as.data.table(expr_data)
+  colnames(data_df) <- column_names
+  rownames(data_df) <- row_names
+  return(data_df)
+}
 
 
 #' Helper function to check whether all given assays are in SummarizedExperiment object
