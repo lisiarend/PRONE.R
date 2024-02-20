@@ -177,11 +177,11 @@ perform_ROTS <- function(data, condition, comparisons, condition_name, coldata, 
     # extract data of comparison
     sampleA <- strsplit(comp, "-")[[1]][1]
     sampleB <- strsplit(comp, "-")[[1]][2]
-    coldata_chunk <- coldata[ coldata[,get(condition_name)] %in% c(sampleA, sampleB)]
+    coldata_chunk <- coldata[coldata[[condition_name]] %in% c(sampleA, sampleB),]
     coldata_chunk <- coldata_chunk %>% dplyr::arrange(factor(get(condition_name), levels = c(sampleA, sampleB)))
     dt_chunk <- data[, coldata_chunk$Column]
     # specify group vector
-    group <- factor(coldata_chunk[,get(condition_name)], levels = c(sampleA, sampleB))
+    group <- factor(coldata_chunk[[condition_name]], levels = c(sampleA, sampleB))
     group <- as.numeric(group)
     # remove protein groups with less than 2 valid values per group
     for (i in unique(group)){
