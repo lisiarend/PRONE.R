@@ -7,6 +7,7 @@
 perform_DEqMS(
   fit,
   se,
+  DEqMS_PSMs_column = NULL,
   logFC = TRUE,
   logFC_up = 1,
   logFC_down = -1,
@@ -18,6 +19,8 @@ perform_DEqMS(
 \item{fit}{eBayes object resulting from perform_limma method}
 
 \item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
+
+\item{DEqMS_PSMs_column}{String specifying which column name to use for DEqMS (default NULL)}
 
 \item{logFC}{Boolean specifying whether to apply a logFC threshold (TRUE) or not (FALSE)}
 

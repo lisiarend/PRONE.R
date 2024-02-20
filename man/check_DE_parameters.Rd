@@ -18,7 +18,8 @@ check_DE_parameters(
   p_adj_method = "BH",
   alpha = 0.05,
   B = 100,
-  K = 500
+  K = 500,
+  DEqMS_PSMs_column = NULL
 )
 }
 \arguments{
@@ -50,6 +51,8 @@ If NULL then all normalization of the se object are plotted next to each other.}
 \item{B}{Number of bootstrapping for ROTS}
 
 \item{K}{Number of top-ranked features for reproducibility optimization}
+
+\item{DEqMS_PSMs_column}{String specifying which column name to use for DEqMS (default NULL)}
 }
 \value{
 list of checked assays and condition column name

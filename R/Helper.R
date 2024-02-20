@@ -147,7 +147,14 @@ get_facet_value <- function(se, facet_by){
   return(facet_by)
 }
 
-# transform for export -> TODO
+#' Helper function to transform an expression data frame to a data table
+#'
+#' @param expr_data Expression data frame containing the expression data
+#' @param column_names Column names of the expression data
+#' @param row_names Row names of the expression data
+#'
+#' @return Data table containing the expression data
+#' @export
 expressToDT <- function(expr_data, column_names, row_names) {
   data_df <- data.table::as.data.table(t(data.frame(expr_data)))
   colnames(data_df) <- column_names
@@ -155,7 +162,16 @@ expressToDT <- function(expr_data, column_names, row_names) {
   return(data_df)
 }
 
-# transform for export -> TODO
+
+#' Helper function to transform a tibble to a data table
+#'
+#' @param expr_data Tibble data frame containing the expression data
+#' @param column_names Column names of the expression data
+#' @param row_names Row names of the expression data
+#'
+#' @return Data table containing the expression data
+#' @export
+#'
 tibToDF <- function(expr_data, column_names, row_names) {
   data_df <- data.table::as.data.table(expr_data)
   colnames(data_df) <- column_names
@@ -212,6 +228,25 @@ check_input_assays <- function(se, ain) {
   }
 }
 
+#' Helper function to check whether the DEqMS_PSMs_column is in the SummarizedExperiment object
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param DEqMS_PSMs_column String specifying which column name to use for DEqMS (default NULL)
+#'
+#' @return None
+#' @export
+#'
+check_DEqMS_parameter <- function(se, DEqMS_PSMs_column){
+  stopifnot(methods::is(DEqMS_PSMs_column, "character"))
+  if(is.null(DEqMS_PSMs_column)){
+    stop("No column name for DEqMS given!")
+  } else {
+    if(!DEqMS_PSMs_column %in% colnames(data.table::as.data.table(SummarizedExperiment::rowData(se)))){
+      stop(paste0("No column named ", DEqMS_PSMs_column, " in SummarizedExperiment!"))
+    }
+  }
+}
+
 #' Check parameters for DE analysis
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
@@ -229,11 +264,12 @@ check_input_assays <- function(se, ain) {
 #' @param p_adj_method String specifying the method for adjusted p-values
 #' @param B Number of bootstrapping for ROTS
 #' @param K Number of top-ranked features for reproducibility optimization
+#' @param DEqMS_PSMs_column String specifying which column name to use for DEqMS (default NULL)
 #'
 #' @return list of checked assays and condition column name
 #' @export
 #'
-check_DE_parameters <- function(se, ain = NULL, condition = NULL, comparisons = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500){
+check_DE_parameters <- function(se, ain = NULL, condition = NULL, comparisons = NULL, DE_method = "limma", covariate = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, p_adj_method = "BH", alpha = 0.05, B = 100, K = 500, DEqMS_PSMs_column = NULL){
   # check input parameters
   stopifnot(DE_method %in% c("limma", "ROTS", "DEqMS"))
   stopifnot(p_adj_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY","fdr", "none")) # TODO: check which values available
@@ -244,6 +280,11 @@ check_DE_parameters <- function(se, ain = NULL, condition = NULL, comparisons = 
   stopifnot(methods::is(alpha, "numeric"))
   stopifnot(methods::is(p_adj, "logical"))
   stopifnot(methods::is(logFC, "logical"))
+
+  # check DEqMS column name
+  if(DE_method == "DEqMS"){
+    check_DEqMS_parameter(se, DEqMS_PSMs_column)
+  }
 
   # check covariate
   if(!is.null(covariate)){

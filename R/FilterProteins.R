@@ -54,6 +54,57 @@ filter_proteins_by_value <- function(se, column_name = "Reverse", values = c("+"
   return(se_subset)
 }
 
+#' Get proteins by value in specific column
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param column_name name of column of which proteins with a specific value should be identified
+#' @param values value of the column defining the proteins that should be idetnfieid
+#'
+#' @return vector of protein IDs
+#' @export
+#'
+get_proteins_by_value <- function(se, column_name = "Reverse", values = c("+")){
+  rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
+  if(column_name %in% colnames(rd)){
+    rd_subset <- rd[! rd[, column_name] %in% c(values),]
+    if(nrow(rd_subset) == 0){
+      message("All proteins were identified.")
+    } else if(nrow(rd_subset) == nrow(rd)){
+      message("No proteins were identified.")
+    } else{
+      rm <- nrow(rd) - nrow(rd_subset)
+      message(paste0(rm, " proteins were identified."))
+    }
+    return(rd_subset$Protein.IDs)
+  } else {
+    warning(paste0("Column ", column_name, " not in SummarizedExperiment object!"))
+    return(c())
+  }
+}
+
+#' Filter proteins by their ID
+#'
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param protein_ids Vector of protein IDs that should be kept
+#'
+#' @return filtered SummarizedExperiment object
+#' @export
+#'
+filter_proteins_by_ID <- function(se, protein_ids){
+  rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
+  rd_subset <- rd[rd$Protein.IDs %in% protein_ids,]
+  se_subset <- se[rd_subset$ID, ]
+  if(nrow(se_subset) == 0){
+    stop("No proteins would be remaining. Aborted!")
+  } else if(nrow(se_subset) == nrow(se)){
+    message("No proteins were removed.")
+  } else{
+    rm <- nrow(se) - nrow(se_subset)
+    message(paste0(rm, " proteins were removed."))
+  }
+  return(se_subset)
+}
+
 #' Filter proteins based on their NA pattern using a specific threshold
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set

@@ -77,7 +77,6 @@ get_complete_pca_dt <- function(se, ain=NULL){
   return(complete_pca_dt)
 }
 
-
 #' Function to get a long data table of first and second sample values of all kind of normalization
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
@@ -470,7 +469,6 @@ plot_PCA <- function(se, ain=NULL, color_by = NULL, label_by = NULL, shape_by = 
   }
   return(p)
 }
-
 
 ## ----- Quantitative Evaluation Functions ----- ##
 
