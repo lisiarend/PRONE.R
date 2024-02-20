@@ -1,7 +1,7 @@
 Package: PRONE.R
 Type: Package
 Title: Normalization and Analysis of Proteomics Data
-Version: 0.1.4
+Version: 0.1.5
 Authors@R: c(person("Lis", "Arend", email = "lisiarend@me.com", role = c("aut", "cre")))
 Description: Package for normalization of proteomics data using different methods and functions for the evaluation of these methods are provided.
 License: GPL (>=3)
@@ -15,7 +15,6 @@ Imports:
     ggplot2,
     S4Vectors,
     ComplexHeatmap,
-    POMA, 
     stringr,
     RobNorm,
     NormalyzerDE,
@@ -53,4 +52,5 @@ VignetteBuilder: knitr
 Suggests: 
     testthat (>= 3.0.0),
     knitr
+    POMA
 Config/testthat/edition: 3
