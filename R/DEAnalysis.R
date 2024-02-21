@@ -214,7 +214,7 @@ perform_ROTS <- function(data, condition, comparisons, condition_name, coldata, 
       }
     }
     gene_reg$Change <- as.factor(gene_reg$Change)
-    gene_reg$Comparison <- rep(comparisons[i], nrow(gene_reg))
+    #gene_reg$Comparison <- rep(comparisons[i], nrow(gene_reg))
     if(is.null(de_res)){
       de_res <- gene_reg
     } else {
