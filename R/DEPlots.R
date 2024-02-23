@@ -194,17 +194,18 @@ plot_heatmap_DE <- function(se, de_res, ain, comparison, condition = NULL, label
 #' @param de_res data table resulting of run_DE
 #' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
 #' @param comparisons Vector of comparisons (must be valid comparisons saved in de_res)
-#' @param facet_comparison Boolean indicating whether to facet by comparison (TRUE) or not (FALSE)
+#' @param plot_type String indicating whether to plot a single plot per comparison ("single"), facet by comparison ("facet") or stack the number of DE per comparison ("stacked)
 #'
-#' @return list of ggplot objects or single object if facet_comparison is TRUE
+#' @return list of ggplot objects or single object if plot_type = facet or stacked
 #' @export
 #'
-plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, facet_comparison = TRUE){
+plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, plot_type = "single"){
   # check parameters
   tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
   de_res <- tmp[[1]]
   ain <- tmp[[2]]
   comparisons <- tmp[[3]]
+  stopifnot(plot_type %in% c("single", "facet", "stacked"))
 
   # get overview DE
   dt <- get_overview_DE(de_res)
@@ -213,7 +214,15 @@ plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, facet_c
   melted_dt$Assay <- factor(melted_dt$Assay, levels = sort(as.character(unique(melted_dt$Assay))))
   # plot
   p <- list()
-  if(facet_comparison){
+  if(plot_type == "stacked"){
+    # sum up- and down-regulated proteins
+    plot_dt <- melted_dt %>% dplyr::group_by(Comparison, Assay) %>% dplyr::summarise(N = sum(N))
+    p <-  ggplot2::ggplot(plot_dt, ggplot2::aes(x = get("N"), y = get("Assay"), fill = get("Comparison"), label = get("N"))) +
+      ggplot2::geom_bar(stat = "identity", position = ggplot2::position_stack()) +
+      ggplot2::scale_fill_brewer(palette = "Set2", name = "Comparison") +
+      ggplot2::labs(title = "Overview of DE results", x = "Number of proteins", y = "Assay") +
+      ggplot2::theme_minimal()
+  } else if(plot_type == "facet"){
     if("Significant Change" %in% melted_dt$Change){
       color_values <- c("No Change" = "grey", "Significant Change" = "#D55E00")
     } else if ("Up Regulated" %in% dt$Change | "Down Regulated" %in% dt$Change){
@@ -223,7 +232,7 @@ plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, facet_c
     }
     p <- ggplot2::ggplot(melted_dt, ggplot2::aes(x = get("N"), y = get("Assay"), fill = get("Change"), label = get("N"))) +
       ggplot2::geom_bar(stat = "identity", position = ggplot2::position_stack()) +
-      ggplot2::facet_wrap(~Comparison, scales = "free_y") +
+      ggplot2::facet_wrap(~Comparison, scales = "free") +
       ggplot2::scale_fill_manual(values = color_values, name = "Change") +
       ggplot2::labs(title = "Overview of DE results", x = "Number of proteins", y = "Assay") +
       ggplot2::theme_minimal()
