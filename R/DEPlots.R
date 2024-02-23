@@ -83,7 +83,7 @@ plot_volcano_DE <- function(de_res, ain = NULL, comparisons = NULL, facet_norm =
   return(p)
 }
 
-#' Title
+#' Heatmap of DE results
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set (including the normalized intensities)
 #' @param de_res data table resulting of run_DE
@@ -194,11 +194,12 @@ plot_heatmap_DE <- function(se, de_res, ain, comparison, condition = NULL, label
 #' @param de_res data table resulting of run_DE
 #' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
 #' @param comparisons Vector of comparisons (must be valid comparisons saved in de_res)
+#' @param facet_comparison Boolean indicating whether to facet by comparison (TRUE) or not (FALSE)
 #'
-#' @return list of ggplot objects
+#' @return list of ggplot objects or single object if facet_comparison is TRUE
 #' @export
 #'
-plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL){
+plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, facet_comparison = TRUE){
   # check parameters
   tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
   de_res <- tmp[[1]]
@@ -212,20 +213,36 @@ plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL){
   melted_dt$Assay <- factor(melted_dt$Assay, levels = sort(as.character(unique(melted_dt$Assay))))
   # plot
   p <- list()
-  for(comp in comparisons){
-    dt <- melted_dt[melted_dt$Comparison == comp,]
-    if("Significant Change" %in% dt$Change){
+  if(facet_comparison){
+    if("Significant Change" %in% melted_dt$Change){
       color_values <- c("No Change" = "grey", "Significant Change" = "#D55E00")
     } else if ("Up Regulated" %in% dt$Change | "Down Regulated" %in% dt$Change){
       color_values <- c("No Change" = "grey", "Up Regulated" = "#D55E00", "Down Regulated" =  "#0072B2")
     } else {
       color_values <- c("No Change" = "grey")
     }
-    tmp <- ggplot2::ggplot(dt, ggplot2::aes(x = get("N"), y = get("Assay"), fill = get("Change"), label = get("N"))) +
+    p <- ggplot2::ggplot(melted_dt, ggplot2::aes(x = get("N"), y = get("Assay"), fill = get("Change"), label = get("N"))) +
       ggplot2::geom_bar(stat = "identity", position = ggplot2::position_stack()) +
-      ggplot2:: scale_fill_manual(values = color_values, name = "Change") +
-      ggplot2::labs( y = "Normalization Method", x = "Number of DE Proteins")
-    p[[comp]] <- tmp
+      ggplot2::facet_wrap(~Comparison, scales = "free_y") +
+      ggplot2::scale_fill_manual(values = color_values, name = "Change") +
+      ggplot2::labs(title = "Overview of DE results", x = "Number of proteins", y = "Assay") +
+      ggplot2::theme_minimal()
+  } else {
+    for(comp in comparisons){
+      dt <- melted_dt[melted_dt$Comparison == comp,]
+      if("Significant Change" %in% dt$Change){
+        color_values <- c("No Change" = "grey", "Significant Change" = "#D55E00")
+      } else if ("Up Regulated" %in% dt$Change | "Down Regulated" %in% dt$Change){
+        color_values <- c("No Change" = "grey", "Up Regulated" = "#D55E00", "Down Regulated" =  "#0072B2")
+      } else {
+        color_values <- c("No Change" = "grey")
+      }
+      tmp <- ggplot2::ggplot(dt, ggplot2::aes(x = get("N"), y = get("Assay"), fill = get("Change"), label = get("N"))) +
+        ggplot2::geom_bar(stat = "identity", position = ggplot2::position_stack()) +
+        ggplot2:: scale_fill_manual(values = color_values, name = "Change") +
+        ggplot2::labs( y = "Normalization Method", x = "Number of DE Proteins")
+      p[[comp]] <- tmp
+    }
   }
   return(p)
 }
