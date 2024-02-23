@@ -256,74 +256,75 @@ plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, plot_ty
   return(p)
 }
 
+
 #' Upset plots of DE results of the different normalization methods
 #'
 #' @param de_res data table resulting of run_DE
 #' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
 #' @param comparisons Vector of comparisons (must be valid comparisons saved in de_res)
 #' @param min_degree Minimal degree of an intersection for it to be included
+#' @param plot_type String indicating whether to plot a single plot per comparison ("single"), facet by comparison ("facet") or stack the number of DE per comparison ("stacked)
 #'
-#' @return list of list of ComplexUpset objects and list of data tables with intersections (one for each comparison)
+#' @return list of plots and intersection tables (split by comparison if plot_type == "single)
 #' @export
 #'
-plot_upset_DE <- function(de_res, ain = NULL, comparisons = NULL, min_degree = 2) {
+plot_upset_DE <- function(de_res, ain = NULL, comparisons = NULL, min_degree = 2, plot_type = "single") {
     # check parameters
     tmp <- check_plot_DE_parameters(de_res, ain, comparisons)
     de_res <- tmp[[1]]
     ain <- tmp[[2]]
     comparisons <- tmp[[3]]
+    stopifnot(plot_type %in% c("single", "stacked"))
     de_res <- de_res[de_res$Assay %in% ain, ]
     p <- list()
-    for (comp in comparisons) {
-      dt <- de_res[de_res$Comparison == comp, ]
-      # only extract significant changes
-      dt <- dt[dt$Change %in% c("Up Regulated", "Down Regulated", "Significant Change"), ]
-      if (nrow(dt) == 0) {
-        warning(paste0("No significant changes for comparison ", comp, ": nothing to plot."))
-      } else {
-        # prepare data for ComplexUpset
-        dt <- dt[, c("Assay", "Protein.IDs"), with = FALSE]
-        dt <- unique(dt)
-        dt <- data.table::dcast(dt, Assay ~ Protein.IDs)
-        dt[is.na(dt)] <- 0
-        assays <- dt$Assay
-        dt$Assay <- NULL
-        dt[dt != 0] <- 1
-        dt <- as.data.frame(dt)
-        row.names(dt) <- assays
-        dt <- t(dt)
-        dt <- dt == 1
-        dt <- dt[names(sort(rowSums(dt))), ]
-        dt <- as.data.frame(dt)
-        # plot
-        upset <- ComplexUpset::upset(
-          dt,
-          colnames(dt),
-          name = "",
-          set_sizes = ComplexUpset::upset_set_size(position = "right") + ggplot2::ylab("Set Size"),
-          sort_sets = FALSE,
-          keep_empty_groups = FALSE,
-          sort_intersections = "descending",
-          min_degree = min_degree,
-          base_annotations = list("Intersection Size" =
-                                    ComplexUpset::intersection_size(text = list(size = 3))),
-          themes = ComplexUpset::upset_default_themes(text = ggplot2::element_text(size = 12))
-        )
-        # prepare data table of intersections
-        nr_methods <- rowSums(dt)
-        t <- purrr::map2_df(dt, names(dt), ~  replace(.x, .x==TRUE, .y))
-        t[t == FALSE] <- NA
-        t <- as.data.frame(t)
-        rownames(t) <- rownames(dt)
-        res <- t %>% tidyr::unite(., col = "Assays", na.rm=TRUE, sep = ",")
-        res$Nr <- nr_methods
-        res <- res[order(-res$Nr),]
-        res$Protein.IDs <- rownames(res)
-        res <- res[, c("Protein.IDs", "Nr", "Assays")]
-        colnames(res) <- c("Protein.IDs", "Number of Intersected Assays", "Assays")
-        rownames(res) <- NULL
-        p[[comp]] <- list("upset" = upset, "table" = res)
 
+    # prepare data for upset
+    dt <- de_res[de_res$Change %in% c("Up Regulated", "Down Regulated", "Significant Change"), ]
+    dt <- dt[, c("Assay", "Comparison", "Protein.IDs"), with = FALSE]
+    dt <- data.table::dcast(dt, Protein.IDs + Comparison ~ Assay, fun.aggregate = length) %>% as.data.frame()
+
+    # prepare table of intersections
+    nr_methods <- data.frame("Protein.IDs" = dt$Protein.IDs, "Comparison" = dt$Comparison, "Nr" = rowSums(dt[, ain]))
+    t <- purrr::map2_df(dt, names(dt), ~  replace(.x, .x==TRUE, .y))
+    t[t == 0] <- NA
+    t <- as.data.frame(t)
+    res <- t %>% tidyr::unite(., ain, col = "Assays", na.rm=TRUE, sep = ",")
+    res <- merge(res, nr_methods, by = c("Protein.IDs", "Comparison"))
+    res <- res[order(-res$Nr),]
+    res <- res[, c("Protein.IDs", "Nr", "Assays", "Comparison")]
+    colnames(res) <- c("Protein.IDs", "Number of Intersected Assays", "Assays", "Comparison")
+
+    if(plot_type == "stacked"){
+      upset <- ComplexUpset::upset(dt, intersect = ain, min_degree = min_degree,
+                          base_annotations = list("Intersection Size" = ComplexUpset::intersection_size(counts = TRUE,
+                                                                                          bar_number_threshold = 1,
+                                                                                          mapping = ggplot2::aes(fill = Comparison)) + ggplot2::scale_fill_brewer(palette = "Set2", name = "Comparison")))
+      p <- list("upset" = upset, "table" = res)
+    } else {
+
+      for (comp in comparisons) {
+        comp_dt <- dt[dt$Comparison == comp, ]
+        comp_res <- res[res$Comparison == comp,]
+        if (nrow(dt) == 0) {
+          warning(paste0("No significant changes for comparison ", comp, ": nothing to plot."))
+        } else {
+          # plot
+          upset <- ComplexUpset::upset(
+            comp_dt,
+            ain,
+            name = "",
+            set_sizes = ComplexUpset::upset_set_size(position = "right") + ggplot2::ylab("Set Size"),
+            sort_sets = FALSE,
+            keep_empty_groups = FALSE,
+            sort_intersections = "descending",
+            min_degree = min_degree,
+            base_annotations = list("Intersection Size" =
+                                      ComplexUpset::intersection_size(text = list(size = 3))),
+            themes = ComplexUpset::upset_default_themes(text = ggplot2::element_text(size = 12))
+          )
+
+          p[[comp]] <- list("upset" = upset, "table" = comp_res)
+        }
       }
     }
     return(p)
