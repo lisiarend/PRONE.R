@@ -194,7 +194,7 @@ plot_heatmap_DE <- function(se, de_res, ain, comparison, condition = NULL, label
 #' @param de_res data table resulting of run_DE
 #' @param ain Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)
 #' @param comparisons Vector of comparisons (must be valid comparisons saved in de_res)
-#' @param plot_type String indicating whether to plot a single plot per comparison ("single"), facet by comparison ("facet") or stack the number of DE per comparison ("stacked)
+#' @param plot_type String indicating whether to plot a single plot per comparison ("single"), facet by comparison ("facet_comp"), stack the number of DE per comparison ("stacked"), or stack the number of DE per comparison but facet by up- and down-regulated ("facet_regulation")
 #'
 #' @return list of ggplot objects or single object if plot_type = facet or stacked
 #' @export
@@ -205,7 +205,7 @@ plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, plot_ty
   de_res <- tmp[[1]]
   ain <- tmp[[2]]
   comparisons <- tmp[[3]]
-  stopifnot(plot_type %in% c("single", "facet", "stacked"))
+  stopifnot(plot_type %in% c("single", "facet_comp", "stacked", "facet_regulation"))
 
   # get overview DE
   dt <- get_overview_DE(de_res)
@@ -222,7 +222,14 @@ plot_overview_DE_bar <- function(de_res, ain = NULL, comparisons = NULL, plot_ty
       ggplot2::scale_fill_brewer(palette = "Set2", name = "Comparison") +
       ggplot2::labs(title = "Overview of DE results", x = "Number of proteins", y = "Assay") +
       ggplot2::theme_minimal()
-  } else if(plot_type == "facet"){
+  } else if(plot_type == "facet_regulation"){
+    p <-  ggplot2::ggplot(melted_dt, ggplot2::aes(x = get("N"), y = get("Assay"), fill = get("Comparison"), label = get("N"))) +
+      ggplot2::geom_bar(stat = "identity", position = ggplot2::position_stack()) +
+      ggplot2::scale_fill_brewer(palette = "Set2", name = "Comparison") +
+      ggplot2::facet_wrap(~Change, scales = "free_y") +
+      ggplot2::labs(title = "Overview of DE results", x = "Number of proteins", y = "Assay") +
+      ggplot2::theme_minimal()
+  } else if(plot_type == "facet_comp"){
     if("Significant Change" %in% melted_dt$Change){
       color_values <- c("No Change" = "grey", "Significant Change" = "#D55E00")
     } else if ("Up Regulated" %in% dt$Change | "Down Regulated" %in% dt$Change){
