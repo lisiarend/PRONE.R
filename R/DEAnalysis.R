@@ -293,7 +293,6 @@ spectraCounteBayes_DEqMS <- function(fit, coef_col){
 #' @export
 #'
 perform_DEqMS <- function(fit, se, DEqMS_PSMs_column = NULL, logFC = TRUE, logFC_up = 1, logFC_down = -1, p_adj = TRUE, alpha = 0.05){
-
   # check again DEqMS_PSMs_column
   check_DEqMS_parameter(se, DEqMS_PSMs_column)
 

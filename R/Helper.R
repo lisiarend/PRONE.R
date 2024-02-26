@@ -281,11 +281,6 @@ check_DE_parameters <- function(se, ain = NULL, condition = NULL, comparisons = 
   stopifnot(methods::is(p_adj, "logical"))
   stopifnot(methods::is(logFC, "logical"))
 
-  # check DEqMS column name
-  if(DE_method == "DEqMS"){
-    check_DEqMS_parameter(se, DEqMS_PSMs_column)
-  }
-
   # check covariate
   if(!is.null(covariate)){
     if(!covariate %in% colnames(data.table::as.data.table(SummarizedExperiment::colData(se)))){
