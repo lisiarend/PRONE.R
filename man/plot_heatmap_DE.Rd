@@ -2,7 +2,7 @@
 % Please edit documentation in R/DEPlots.R
 \name{plot_heatmap_DE}
 \alias{plot_heatmap_DE}
-\title{Title}
+\title{Heatmap of DE results}
 \usage{
 plot_heatmap_DE(
   se,
@@ -33,5 +33,5 @@ plot_heatmap_DE(
 list of ComplexHeatmaps for each method
 }
 \description{
-Title
+Heatmap of DE results
 }

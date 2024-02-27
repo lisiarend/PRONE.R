@@ -519,7 +519,7 @@ apply_thresholds <- function(de_res, logFC = TRUE, logFC_up = 1, logFC_down = -1
   de_res$Change <- as.factor(de_res$Change)
   return(de_res)
 }
-
+ComplexUpset::upset_default_themes
 
 
 #' Get overview table of DE results

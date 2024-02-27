@@ -4,7 +4,12 @@
 \alias{plot_overview_DE_bar}
 \title{Overview plots of DE results}
 \usage{
-plot_overview_DE_bar(de_res, ain = NULL, comparisons = NULL)
+plot_overview_DE_bar(
+  de_res,
+  ain = NULL,
+  comparisons = NULL,
+  plot_type = "single"
+)
 }
 \arguments{
 \item{de_res}{data table resulting of run_DE}
@@ -12,9 +17,11 @@ plot_overview_DE_bar(de_res, ain = NULL, comparisons = NULL)
 \item{ain}{Vector of strings of normalization methods to visualize (must be valid normalization methods saved in de_res)}
 
 \item{comparisons}{Vector of comparisons (must be valid comparisons saved in de_res)}
+
+\item{plot_type}{String indicating whether to plot a single plot per comparison ("single"), facet by comparison ("facet_comp"), stack the number of DE per comparison ("stacked"), or stack the number of DE per comparison but facet by up- and down-regulated ("facet_regulation")}
 }
 \value{
-list of ggplot objects
+list of ggplot objects or single object if plot_type = facet or stacked
 }
 \description{
 Overview plots of DE results

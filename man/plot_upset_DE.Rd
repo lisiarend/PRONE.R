@@ -4,7 +4,13 @@
 \alias{plot_upset_DE}
 \title{Upset plots of DE results of the different normalization methods}
 \usage{
-plot_upset_DE(de_res, ain = NULL, comparisons = NULL, min_degree = 2)
+plot_upset_DE(
+  de_res,
+  ain = NULL,
+  comparisons = NULL,
+  min_degree = 2,
+  plot_type = "single"
+)
 }
 \arguments{
 \item{de_res}{data table resulting of run_DE}
@@ -14,9 +20,11 @@ plot_upset_DE(de_res, ain = NULL, comparisons = NULL, min_degree = 2)
 \item{comparisons}{Vector of comparisons (must be valid comparisons saved in de_res)}
 
 \item{min_degree}{Minimal degree of an intersection for it to be included}
+
+\item{plot_type}{String indicating whether to plot a single plot per comparison ("single"), facet by comparison ("facet") or stack the number of DE per comparison ("stacked)}
 }
 \value{
-list of list of ComplexUpset objects and list of data tables with intersections (one for each comparison)
+list of plots and intersection tables (split by comparison if plot_type == "single)
 }
 \description{
 Upset plots of DE results of the different normalization methods
