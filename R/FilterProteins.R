@@ -183,7 +183,7 @@ plot_NA_heatmap <- function(se, color_by = NULL, label_by = NULL, cluster_sample
   colnames(dt) <- coldata$Column
 
   if(show_sample_names){
-    colnames(dt) <- coldata[, label_by]
+    colnames(dt) <- as.character(coldata[, label_by])
   } else {
     colnames(dt) <- coldata$Column
   }
