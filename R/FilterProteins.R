@@ -163,6 +163,7 @@ filter_NA_proteins_by_threshold <- function(se, thr = 0.8){
 #' @export
 #'
 plot_NA_heatmap <- function(se, color_by = NULL, label_by = NULL, cluster_samples = TRUE, cluster_proteins = TRUE, show_row_dend = TRUE, show_column_dend = FALSE){
+  browser()
   # get color and label values
   color_by <- get_color_value(se, color_by)
   tmp <- get_label_value(se, label_by)
