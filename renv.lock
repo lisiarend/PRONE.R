@@ -363,28 +363,6 @@
       ],
       "Hash": "c3f7b221e60c28f5f3533d74c6fef024"
     },
-    "HarmonizR": {
-      "Package": "HarmonizR",
-      "Version": "0.0.0.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "HarmonizR",
-      "RemoteUsername": "SimonSchlumbohm",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "5fb9ba1d119aa8c78b8000f8b53bcc9d27eba368",
-      "RemoteSubdir": "HarmonizR",
-      "Requirements": [
-        "BiocManager",
-        "R",
-        "doParallel",
-        "foreach",
-        "janitor",
-        "plyr",
-        "sva"
-      ],
-      "Hash": "7aff8d3183ef9eefbd1b463e78d27cc4"
-    },
     "Hmisc": {
       "Package": "Hmisc",
       "Version": "5.1-0",
@@ -1828,23 +1806,6 @@
       ],
       "Hash": "ba4be138fe47eac3e16a6deaa4da106e"
     },
-    "genefilter": {
-      "Package": "genefilter",
-      "Version": "1.80.3",
-      "Source": "Bioconductor",
-      "Requirements": [
-        "AnnotationDbi",
-        "Biobase",
-        "BiocGenerics",
-        "annotate",
-        "grDevices",
-        "graphics",
-        "methods",
-        "stats",
-        "survival"
-      ],
-      "Hash": "456e757607027526632bc38e4d92ff50"
-    },
     "geneplotter": {
       "Package": "geneplotter",
       "Version": "1.76.0",
@@ -2334,28 +2295,6 @@
         "utils"
       ],
       "Hash": "8954069286b4b2b0d023d1b288dce978"
-    },
-    "janitor": {
-      "Package": "janitor",
-      "Version": "2.2.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "dplyr",
-        "hms",
-        "lifecycle",
-        "lubridate",
-        "magrittr",
-        "purrr",
-        "rlang",
-        "snakecase",
-        "stringi",
-        "stringr",
-        "tidyr",
-        "tidyselect"
-      ],
-      "Hash": "5baae149f1082f466df9d1442ba7aa65"
     },
     "jquerylib": {
       "Package": "jquerylib",
@@ -3507,18 +3446,6 @@
       ],
       "Hash": "c956d93f6768a9789edbc13072b70c78"
     },
-    "snakecase": {
-      "Package": "snakecase",
-      "Version": "0.11.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "stringi",
-        "stringr"
-      ],
-      "Hash": "58767e44739b76965332e8a4fe3f91f1"
-    },
     "snow": {
       "Package": "snow",
       "Version": "0.4-4",
@@ -3602,24 +3529,6 @@
         "utils"
       ],
       "Hash": "04411ae66ab4659230c067c32966fc20"
-    },
-    "sva": {
-      "Package": "sva",
-      "Version": "3.46.0",
-      "Source": "Bioconductor",
-      "Requirements": [
-        "BiocParallel",
-        "R",
-        "edgeR",
-        "genefilter",
-        "graphics",
-        "limma",
-        "matrixStats",
-        "mgcv",
-        "stats",
-        "utils"
-      ],
-      "Hash": "cff27a16344227cf1b74703774380618"
     },
     "sys": {
       "Package": "sys",
