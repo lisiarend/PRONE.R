@@ -66,7 +66,7 @@ filter_proteins_by_value <- function(se, column_name = "Reverse", values = c("+"
 get_proteins_by_value <- function(se, column_name = "Reverse", values = c("+")){
   rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
   if(column_name %in% colnames(rd)){
-    rd_subset <- rd[! rd[, column_name] %in% c(values),]
+    rd_subset <- rd[rd[, column_name] %in% c(values),]
     if(nrow(rd_subset) == 0){
       message("All proteins were identified.")
     } else if(nrow(rd_subset) == nrow(rd)){
@@ -92,7 +92,7 @@ get_proteins_by_value <- function(se, column_name = "Reverse", values = c("+")){
 #'
 filter_proteins_by_ID <- function(se, protein_ids){
   rd <- data.table::as.data.table(SummarizedExperiment::rowData(se))
-  rd_subset <- rd[rd$Protein.IDs %in% protein_ids,]
+  rd_subset <- rd[!rd$Protein.IDs %in% protein_ids,]
   se_subset <- se[rd_subset$ID, ]
   if(nrow(se_subset) == 0){
     stop("No proteins would be remaining. Aborted!")

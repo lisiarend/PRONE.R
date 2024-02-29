@@ -222,6 +222,9 @@ quantileNorm <- function(se, ain="log2", aout="Quantile"){
 #'
 vsnNorm <- function(se, ain="raw", aout="VSN", VSN_quantile = 0.9){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  if(ain != "raw"){
+    dt <- 2 ** dt
+  }
   norm_dt <- suppressMessages(limma::normalizeVSN(dt, lts.quantile = VSN_quantile))
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
@@ -574,7 +577,7 @@ normicsNorm <- function(se, ain = "log2", aout = "NormicsVSN", method = "Normics
   longlist$Rank_sum_RS <- longlist$Rank_sum_RS + seq_len(nrow(longlist)) - 1
   longlist <- longlist[order(longlist[[cols[2]]]), ]
 
-    # extract top
+  # extract top
   shortlist <- longlist[1:top_x, ]
 
   if(method == "NormicsVSN"){

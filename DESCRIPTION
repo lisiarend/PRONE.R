@@ -1,7 +1,7 @@
 Package: PRONE.R
 Type: Package
 Title: Normalization and Analysis of Proteomics Data
-Version: 0.1.15
+Version: 0.1.16
 Authors@R: c(person("Lis", "Arend", email = "lisiarend@me.com", role = c("aut", "cre")))
 Description: Package for normalization of proteomics data using different methods and functions for the evaluation of these methods are provided.
 License: GPL (>=3)
