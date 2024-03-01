@@ -753,9 +753,9 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5, reduce_correl
       if(method == "RobNorm"){
         se <- func(se, ain = ain, aout = aout, gamma.0 = gamma.0)
       } else if(method %in% c("NormicsVSN", "NormicsMedian")){
-        se <- func(se, aout = aout, method = method, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x)
+        se <- func(se, ain = ain, aout = aout, method = method, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x)
       } else if(method == "VSN"){
-        se <- func(se, aout = aout, VSN_quantile = VSN_quantile)
+        se <- func(se, ain = ain, aout = aout, VSN_quantile = VSN_quantile)
       } else {
         se <- func(se, ain = ain, aout = aout)
       }
