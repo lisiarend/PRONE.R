@@ -348,7 +348,6 @@ quantileNorm <- function(se, ain="log2", aout="Quantile", on_raw = FALSE){
 #'
 vsnNorm <- function(se, ain="raw", aout="VSN", on_raw = TRUE, VSN_quantile = 0.9){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
-  browser()
   # check if ain is not raw but normalization should be performed on raw data
   if(on_raw & ain != "raw"){
     if(ain == "log2"){
