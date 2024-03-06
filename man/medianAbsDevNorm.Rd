@@ -2,20 +2,27 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{medianAbsDevNorm}
 \alias{medianAbsDevNorm}
-\title{Median Absolute Deviation Normalization (substracts the median and divides the data by the median absolute deviation (MAD))}
+\title{Median Absolute Deviation Normalization}
 \usage{
-medianAbsDevNorm(se, ain = "log2", aout = "MAD")
+medianAbsDevNorm(se, ain = "log2", aout = "MAD", on_raw = FALSE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default mad)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scale data}
 }
 \value{
-SummarizedExperiment containing the MAD normalized data as assay
+SummarizedExperiment containing the MAD normalized data as assay (on log2 scale)
 }
 \description{
-Median Absolute Deviation Normalization (substracts the median and divides the data by the median absolute deviation (MAD))
+Substracts the median and divides the data by the median absolute deviation (MAD). Log2-scaled data should be used as input (on_raw = FALSE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- medianAbsDevNorm(se, ain = "log2", aout = "MAD", on_raw = FALSE)
+
 }

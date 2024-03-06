@@ -2,20 +2,29 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{globalMedianNorm}
 \alias{globalMedianNorm}
-\title{Total Intensity Normalization Using Median For Calculation of Scaling Factors}
+\title{Total Intensity Normalization Using the Median for the Calculation of Scaling Factors}
 \usage{
-globalMedianNorm(se, ain = "raw", aout = "GlobalMedian")
+globalMedianNorm(se, ain = "raw", aout = "GlobalMedian", on_raw = TRUE)
 }
 \arguments{
-\item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
+\item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
 
-\item{ain}{String which assay should be used as input (default raw)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default GlobalMedian)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the total intensity normalized data as assay
+SummarizedExperiment containing the total intensity normalized data as assay (on log2 scale)
 }
 \description{
-Total Intensity Normalization Using Median For Calculation of Scaling Factors
+Intensities of each variable in a sample are divided with the sum of intensities
+of all variables in the sample and multiplied with the median of sum of intensities
+of all variables in all samples. Raw data should be taken as input (on_raw = TRUE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- globalMedianNorm(se, ain = "raw", aout = "GlobalMedian", on_raw = TRUE)
+
 }

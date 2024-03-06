@@ -2,24 +2,28 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{rlrMANorm}
 \alias{rlrMANorm}
-\title{Linear Regression Normalization on MA Transformed Data (similar to Rlr, but data are MA transformed before normalization,
-(A = median sample, M = difference of that sample to A)}
+\title{Linear Regression Normalization on MA Transformed Data}
 \usage{
-rlrMANorm(se, ain = "log2", aout = "RlrMA")
+rlrMANorm(se, ain = "log2", aout = "RlrMA", on_raw = FALSE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default rlrMA)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the rlrMA normalized data as assay
-
-SummarizedExperiment containing the rlrMA normalized data as assay
+SummarizedExperiment containing the RlrMA normalized data as assay (on log2 scale)
 }
 \description{
-Linear Regression Normalization on MA Transformed Data (similar to Rlr, but data are MA transformed before normalization,
-(A = median sample, M = difference of that sample to A)
+Similar to Rlr, but data are MA transformed before normalization,
+(A = median sample, M = difference of that sample to A). Log2 data should be taken as input (on_raw = FALSE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- rlrMANorm(se, ain = "log2", aout = "RlrMA", on_raw = FALSE)
+
 }

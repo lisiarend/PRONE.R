@@ -1,24 +1,41 @@
 ## ----- Normalization Methods ----- ##
 
 #' Total Intensity Normalization
+#'
 #' Intensities of each variable in a sample are divided with the sum of intensities
 #' of all variables in the sample and multiplied with the median or mean of sum of intensities
-#' of all variables in all samples. Raw data is taken as input (not log2).
+#' of all variables in all samples. Raw data should be taken as input (on_raw = TRUE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
-#' @param ain String which assay should be used as input (default raw)
-#' @param aout String which assay should be used to save normalized data (default TotalInt_mean or TotalInt_median)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
 #' @param type String whether to use median or mean to calculate the scaling factor
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #' @importFrom SummarizedExperiment assay
 #'
-#' @return SummarizedExperiment containing the total intensity normalized data as assay
+#' @return SummarizedExperiment containing the total intensity normalized data as assay (on log2 scale)
 #' @export
 #'
-globalIntNorm <- function(se, ain = "raw", aout="GlobalMedian", type = "median"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' PRONE_example_real_se <- globalIntNorm(se, ain = "raw",
+#'                                            aout = "GlobalMedian",
+#'                                            type = "median",
+#'                                            on_raw = TRUE)
+#'
+globalIntNorm <- function(se, ain = "raw", aout="GlobalMedian", type = "median", on_raw = TRUE){
   dt <- SummarizedExperiment::assays(se)[[ain]]
   dt <- as.data.frame(dt)
-  if(ain != "raw"){
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
     dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
   }
   colSums <- colSums(dt, na.rm = TRUE)
   if(type == "median"){
@@ -36,54 +53,93 @@ globalIntNorm <- function(se, ain = "raw", aout="GlobalMedian", type = "median")
     norm_dt[rowIndex, ] <- vapply(seq_len(ncol(dt)),
                                   normFunc, 0)
   }
-  norm_dt <- log2(norm_dt)
+  # transform data to log2-scale if necessary
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   colnames(norm_dt) <- colnames(dt)
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
   return(se)
 }
 
-#' Total Intensity Normalization Using Mean For Calculation of Scaling Factors
+#' Total Intensity Normalization Using the Mean for the Calculation of Scaling Factors
+#'
+#' Intensities of each variable in a sample are divided with the sum of intensities
+#' of all variables in the sample and multiplied with the mean of sum of intensities
+#' of all variables in all samples. Raw data should be taken as input (on_raw = TRUE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomics data set
-#' @param ain String which assay should be used as input (default raw)
-#' @param aout String which assay should be used to save normalized data (default GlobalMean)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the total intensity normalized data as assay
+#' @return SummarizedExperiment containing the total intensity normalized data as assay (on log2 scale)
 #' @export
 #'
-globalMeanNorm <- function(se, ain = "raw", aout = "GlobalMean"){
-  se <- globalIntNorm(se, ain, aout, type = "mean")
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- globalMeanNorm(se, ain = "raw", aout = "GlobalMean", on_raw = TRUE)
+#'
+globalMeanNorm <- function(se, ain = "raw", aout = "GlobalMean", on_raw = TRUE){
+  se <- globalIntNorm(se, ain, aout, type = "mean", on_raw = on_raw)
   return(se)
 }
 
-#' Total Intensity Normalization Using Median For Calculation of Scaling Factors
+#' Total Intensity Normalization Using the Median for the Calculation of Scaling Factors
 #'
-#' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default raw)
-#' @param aout String which assay should be used to save normalized data (default GlobalMedian)
+#' Intensities of each variable in a sample are divided with the sum of intensities
+#' of all variables in the sample and multiplied with the median of sum of intensities
+#' of all variables in all samples. Raw data should be taken as input (on_raw = TRUE).
 #'
-#' @return SummarizedExperiment containing the total intensity normalized data as assay
+#' @param se SummarizedExperiment containing all necessary information of the proteomics data set
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
+#'
+#' @return SummarizedExperiment containing the total intensity normalized data as assay (on log2 scale)
 #' @export
 #'
-globalMedianNorm <- function(se, ain = "raw", aout = "GlobalMedian"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- globalMedianNorm(se, ain = "raw", aout = "GlobalMedian", on_raw = TRUE)
+#'
+globalMedianNorm <- function(se, ain = "raw", aout = "GlobalMedian", on_raw = TRUE){
   se <- globalIntNorm(se, ain, aout, type = "median")
   return(se)
 }
 
+
 #' Median Normalization
+#'
 #' The intensity of each protein group in a given sample is divided by the median of the
 #' intensities of all protein groups in that sample and then multiplied by the mean of
 #' median of sum of intensities of all protein groups in all samples.
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default mean)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the median normalized data as assay
+#' @return SummarizedExperiment containing the median normalized data as assay (on log2 scale)
 #' @export
 #'
-medianNorm <- function(se, ain = "log2", aout = "Median"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- medianNorm(se, ain = "raw", aout = "Median", on_raw = TRUE)
+#'
+medianNorm <- function(se, ain = "raw", aout = "Median", on_raw = TRUE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   # find median of each sample
   sample_med <- apply(dt, 2, stats::median, na.rm=TRUE) # columns
   # find mean of medians
@@ -95,24 +151,45 @@ medianNorm <- function(se, ain = "log2", aout = "Median"){
   norm_dt <- data.table::as.data.table(norm_dt)
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  # transform data to log2-scale if necessary
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- norm_dt
   return(se)
 }
 
 #' Mean Normalization
+#'
 #' The intensity of each protein group in a given sample is divided by the mean of the
 #' intensities of all protein groups in that sample and then multiplied by the mean of
 #' mean of sum of intensities of all protein groups in all samples.
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default mean)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean whether normalized should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the mean normalized data as assay
+#' @return SummarizedExperiment containing the mean normalized data as assay (on log2 scale)
 #' @export
 #'
-meanNorm <- function(se, ain = "log2", aout="Mean"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- meanNorm(se, ain = "raw", aout = "Mean", on_raw = TRUE)
+#'
+meanNorm <- function(se, ain = "raw", aout="Mean", on_raw = TRUE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   # find means of each sample
   sample_mean <- apply(dt, 2, mean, na.rm=TRUE)
   # find mean of means of each sample
@@ -124,28 +201,44 @@ meanNorm <- function(se, ain = "log2", aout="Mean"){
   norm_dt <- data.table::as.data.table(norm_dt)
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  # transform data to log2-scale if necessary
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- norm_dt
   return(se)
 }
 
 #' Internal Reference Scaling Normalization
+#'
 #' IRS makes different measurements of the same thing all exactly the same and puts
-#' all of the intensities on the same scale.
+#' all of the intensities on the same scale. Raw data should be taken as input (on_raw = TRUE)
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default raw)
-#' @param aout String which assay should be used to save normalized data (default IRS)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the IRS normalized data as assay
+#' @return SummarizedExperiment containing the IRS normalized data as assay (on log2 scale)
 #' @export
 #'
-irsNorm <- function(se, ain="raw", aout="IRS"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- irsNorm(se, ain = "raw", aout = "IRS", on_raw = TRUE)
+irsNorm <- function(se, ain="raw", aout="IRS", on_raw = TRUE){
   # extract necessary info of SummarizedExperiment
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
-  if(ain != "raw"){
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
     dt <- 2^dt
   }
-
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   batch <- S4Vectors::metadata(se)$batch
   refs <- S4Vectors::metadata(se)$refs
   md <- data.table::as.data.table(SummarizedExperiment::colData(se))
@@ -186,86 +279,166 @@ irsNorm <- function(se, ain="raw", aout="IRS"){
   dt_irs <- do.call(cbind, dt_irs_list)
   dt_irs <- data.table::as.data.table(dt_irs)
   dt_irs <- subset(dt_irs, select = colnames(dt))
-  SummarizedExperiment::assay(se, aout, FALSE) <- log2(dt_irs)
+  # transform data to log2-scale if necessary
+  if(on_raw){
+    dt_irs <- log2(dt_irs)
+  }
+  SummarizedExperiment::assay(se, aout, FALSE) <- dt_irs
   return(se)
 }
 
+
 #' Quantile Normalization of preprocessCore package.
+#'
 #' Forces distributions of the samples to be the same on the basis of the quantiles of the samples by replacing
-#' each protein of a sample with the mean of the corresponding quantile.
+#' each protein of a sample with the mean of the corresponding quantile. Log2-scaled data should be taken as input (on_raw = FALSE)
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default quantile)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the quantile normalized data as assay
+#' @return SummarizedExperiment containing the quantile normalized data as assay (on log2 scale)
 #' @export
 #'
-quantileNorm <- function(se, ain="log2", aout="Quantile"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- quantileNorm(se, ain = "log2", aout = "Quantile", on_raw = FALSE)
+#'
+quantileNorm <- function(se, ain="log2", aout="Quantile", on_raw = FALSE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  if(on_raw & ain != "raw"){
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
+  if(ain == "log2" & on_raw == TRUE){
+    warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    dt <- 2^dt
+  }
   norm_dt <- preprocessCore::normalize.quantiles(as.matrix(dt), copy=TRUE)
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  # transform data to log2-scale if necessary
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
   return(se)
 }
 
-#' Variance Stabilization Normalization of limma package
+#' Variance Stabilization Normalization of limma package.
+#'
+#' Raw data should be taken as input (on_raw = TRUE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default raw)
-#' @param aout String which assay should be used to save normalized data (default vsn)
-#' @param VSN_quantile Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression. (see vsn2 lts.quantile)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
+#' @param VSN_quantile Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression (see vsn2 lts.quantile)
 #'
-#' @return SummarizedExperiment containing the vsn normalized data as assay
+#' @return SummarizedExperiment containing the vsn normalized data as assay (on log2-scale)
 #' @export
 #'
-vsnNorm <- function(se, ain="raw", aout="VSN", VSN_quantile = 0.9){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- vsnNorm(se, ain = "raw", aout = "VSN", on_raw = TRUE, VSN_quantile = 0.9)
+#'
+vsnNorm <- function(se, ain="raw", aout="VSN", on_raw = TRUE, VSN_quantile = 0.9){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
-  if(ain != "raw"){
-    dt <- 2 ** dt
+  browser()
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
   }
   norm_dt <- suppressMessages(limma::normalizeVSN(dt, lts.quantile = VSN_quantile))
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  # no log transformation because limma already returns log2 data
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
   return(se)
 }
 
-#' Weighted Trimmed Mean of M Values (TMM) Normalization
+
+#' Weighted Trimmed Mean of M Values (TMM) Normalization of edgeR package.
+#'
+#' Raw data should be taken as input (on_raw = TRUE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default raw)
-#' @param aout String which assay should be used to save normalized data (default TMM)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the TMM normalized data as assay
+#' @return SummarizedExperiment containing the TMM normalized data as assay (on log2 scale)
 #' @export
 #'
-tmmNorm <- function(se, ain="raw", aout="TMM"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- tmmNorm(se, ain = "raw", aout = "TMM", on_raw = TRUE)
+#'
+tmmNorm <- function(se, ain="raw", aout="TMM", on_raw = TRUE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
-  if(ain != "raw"){
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
     dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
   }
   tmm <- edgeR::calcNormFactors(stats::na.omit(dt))
   dt_norm <- sweep(dt, 2, tmm, FUN="/")
   dt_norm <- data.table::as.data.table(dt_norm)
-  SummarizedExperiment::assay(se, aout, FALSE) <- log2(dt_norm)
+  if(on_raw){
+    dt_norm <- log2(dt_norm)
+  }
+  SummarizedExperiment::assay(se, aout, FALSE) <- dt_norm
   return(se)
 }
 
-#' Robust Linear Regression Normalization of NormalyzerDE (uses median values over all samples as reference
-#' sample to which all the other samples in the data are normalized to)
+#' Robust Linear Regression Normalization of NormalyzerDE.
+#'
+#' Uses median values over all samples as reference
+#' sample to which all the other samples in the data are normalized to. Log2 data should be taken as input (on_raw = FALSE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default rlr)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the rlr normalized data as assay
+#' @return SummarizedExperiment containing the rlr normalized data as assay (on log2 scale)
 #' @export
 #'
-rlrNorm <- function(se, ain="log2", aout="Rlr"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- rlrNorm(se, ain = "log2", aout = "Rlr", on_raw = FALSE)
+#'
+rlrNorm <- function(se, ain="log2", aout="Rlr", on_raw = FALSE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
   dt <- as.data.frame(dt)
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   sample_median <- matrixStats::rowMedians(as.matrix(dt), na.rm = TRUE, useNames = TRUE)
   for (i in 1:ncol(dt)){ # iterate over samples
     sampleA <- dt[,i] # sample to normalize
@@ -279,25 +452,44 @@ rlrNorm <- function(se, ain="log2", aout="Rlr"){
   }
   colnames(dt) <- colnames(dt)
   rownames(dt) <- rownames(dt)
+  if(on_raw){
+    dt <- log2(dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(dt)
   return(se)
 }
 
-#' Linear Regression Normalization on MA Transformed Data (similar to Rlr, but data are MA transformed before normalization,
-#' (A = median sample, M = difference of that sample to A)
+#' Linear Regression Normalization on MA Transformed Data
+#'
+#' Similar to Rlr, but data are MA transformed before normalization,
+#' (A = median sample, M = difference of that sample to A). Log2 data should be taken as input (on_raw = FALSE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default rlrMA)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the rlrMA normalized data as assay
-#'
-#' @return SummarizedExperiment containing the rlrMA normalized data as assay
+#' @return SummarizedExperiment containing the RlrMA normalized data as assay (on log2 scale)
 #' @export
 #'
-rlrMANorm <- function(se, ain="log2",aout="RlrMA"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- rlrMANorm(se, ain = "log2", aout = "RlrMA", on_raw = FALSE)
+#'
+rlrMANorm <- function(se, ain="log2",aout="RlrMA", on_raw = FALSE){
   # extract intensities
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   dt_matrix <- as.matrix(dt)
   # MA transformation
   ref_a <- MatrixGenerics::rowMedians(dt_matrix, na.rm=TRUE, useNames = TRUE) # A = median over all samples --> vector of length (number of proteins)
@@ -312,25 +504,45 @@ rlrMANorm <- function(se, ain="log2",aout="RlrMA"){
   norm_dt <- data.table::as.data.table(dt_matrix)
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- norm_dt
   return(se)
 }
 
-#' Cyclic Linear Regression Normalization on MA Transformed Data (no reference, but MA transformation and normalization
-#' of samples done pairwise between two samples, A = average of two samples, M = difference, process iterated through all samples pairs).
+#' Cyclic Linear Regression Normalization on MA Transformed Data
+#'
+#' No reference, but MA transformation and normalization
+#' of samples is done pairwise between two samples with A = average of two samples and M = difference. The process is iterated through all samples pairs.
+#' Log2 data should be taken as input (on_raw = FALSE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default rlrMACyc)
-#' @param iterations Number of cyclic iterations to be performed (default 3)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
+#' @param iterations Number of cyclic iterations to be performed
 #'
-#' @return SummarizedExperiment containing the rlrMACyc normalized data as assay
-#'
-#' @return SummarizedExperiment containing the rlrMACyc normalized data as assay
+#' @return SummarizedExperiment containing the RlrMACyc normalized data as assay (on log2 scale)
 #' @export
 #'
-rlrMACycNorm <- function(se, ain="log2", aout="RlrMACyc", iterations=3){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- rlrMACycNorm(se, ain = "log2", aout = "RlrMACyc", on_raw = FALSE, iterations=3)
+#'
+rlrMACycNorm <- function(se, ain="log2", aout="RlrMACyc", on_raw = FALSE, iterations=3){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   dt_matrix <- as.matrix(dt)
   n <- ncol(dt)
   # iteration over all pairs
@@ -356,57 +568,120 @@ rlrMACycNorm <- function(se, ain="log2", aout="RlrMACyc", iterations=3){
   norm_dt <- data.table::as.data.table(dt_matrix)
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- norm_dt
   return(se)
 }
 
-#' Cyclic Loess Normalization of limma (two samples of the data are MA transformed and normalized at a time, and all pairs of samples are iterated through)
+#' Cyclic Loess Normalization of limma
+#'
+#' Two samples of the data are MA transformed and normalized at a time, and all pairs of samples are iterated through. Log2-scaled data should be taken as input (on_raw = FALSE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default cyclicLoess)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the loessCyc normalized data as assay
+#' @return SummarizedExperiment containing the loessCyc normalized data as assay (on log2 scale)
 #' @export
 #'
-loessCycNorm <- function(se, ain="log2", aout="LoessCyc"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- loessCycNorm(se, ain = "log2", aout = "LoessCyc", on_raw = FALSE)
+#'
+loessCycNorm <- function(se, ain="log2", aout="LoessCyc", on_raw = FALSE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   norm_dt <- limma::normalizeCyclicLoess(as.matrix(dt), method="pairs")
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
   return(se)
 }
 
-#' Fast Loess Normalization of limma (using mean intensities over all the samples as its reference A sample)
+#' Fast Loess Normalization of limma
+#'
+#' Using mean intensities over all the samples as its reference A sample. Log2-scaled data should be used as input (on_raw = FALSE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default loessF)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #'
-#' @return SummarizedExperiment containing the loessF normalized data as assay
+#' @return SummarizedExperiment containing the LoessF normalized data as assay (on log2 scale)
 #' @export
 #'
-loessFNorm <- function(se, ain="log2", aout="LoessF"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- loessFNorm(se, ain = "log2", aout = "LoessCyc", on_raw = FALSE)
+#'
+loessFNorm <- function(se, ain="log2", aout="LoessF", on_raw = FALSE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   norm_dt <- limma::normalizeCyclicLoess(as.matrix(dt), method="fast")
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
   return(se)
 }
 
 #' EigenMS Normalization
 #'
-#' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default eigenMS)
+#' Log2-scaled data should be used as input (on_raw = FALSE).
 #'
-#' @return SummarizedExperiment containing the EigenMS normalized data as assay
+#' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
+#'
+#' @return SummarizedExperiment containing the EigenMS normalized data as assay (on log2 scale)
 #' @export
 #'
-eigenMSNorm <- function(se, ain="log2", aout="EigenMS"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- eigenMSNorm(se, ain = "log2", aout = "EigenMS", on_raw = FALSE)
+#'
+eigenMSNorm <- function(se, ain="log2", aout="EigenMS", on_raw = FALSE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   prot.info <- cbind(data.frame(SummarizedExperiment::rowData(se)$Protein.IDs), data.frame(SummarizedExperiment::rowData(se)$Protein.IDs))
   colnames(prot.info) <- c("pepIDs", "prID")
   condition <- S4Vectors::metadata(se)$condition
@@ -437,50 +712,88 @@ eigenMSNorm <- function(se, ain="log2", aout="EigenMS"){
   }
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
   return(se)
 }
 
-#' Median Absolute Deviation Normalization (substracts the median and divides the data by the median absolute deviation (MAD))
+#' Median Absolute Deviation Normalization
+#'
+#' Substracts the median and divides the data by the median absolute deviation (MAD). Log2-scaled data should be used as input (on_raw = FALSE).
 #'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default mad)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scale data
 #'
-#' @return SummarizedExperiment containing the MAD normalized data as assay
+#' @return SummarizedExperiment containing the MAD normalized data as assay (on log2 scale)
 #' @export
 #'
-medianAbsDevNorm <- function(se, ain="log2", aout="MAD"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- medianAbsDevNorm(se, ain = "log2", aout = "MAD", on_raw = FALSE)
+#'
+medianAbsDevNorm <- function(se, ain="log2", aout="MAD", on_raw = FALSE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
   dt <- as.matrix(dt)
-  if (!ain %in% c("raw", "vsn")){
-    norm_dt <- NormalyzerDE::performSMADNormalization(dt, noLogTransform = TRUE)
-  } else {
-    norm_dt <- NormalyzerDE::performSMADNormalization(dt, noLogTransform = FALSE)
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
   }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
+  norm_dt <- NormalyzerDE::performSMADNormalization(dt, noLogTransform = TRUE)
   norm_dt <- data.table::as.data.table(norm_dt)
   colnames(norm_dt) <- colnames(dt)
   rownames(norm_dt) <- rownames(dt)
+  if(on_raw){
+    norm_dt <- log2(norm_dt)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
   return(se)
 }
 
 #' RobNorm
 #'
+#' Log2-scaled data should be used as input (on_raw = FALSE).
+#'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default robNorm)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #' @param gamma.0 Numeric representing the exponent of the weighted density. When the sample size
 #'                is small, the fitted population of some proteins could be locally trapped such
 #'                that the variance of those proteins was very small under a large gamma. To avoid
 #'                this, a small gamma is recommended. When sample size smaller than 40, then set
 #'                gamma to 0.5 or 0.1.
 #'
-#' @return SummarizedExperiment containing the robNorm normalized data as assay
+#' @return SummarizedExperiment containing the RobNorm normalized data as assay (on log2 scale)
 #' @export
 #'
-robNorm <- function(se, ain="log2", aout="RobNorm", gamma.0 = 0.1){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- robNorm(se, ain = "log2", aout = "RobNorm", on_raw = FALSE, gamma.0 = 0.1)
+#'
+robNorm <- function(se, ain="log2", aout="RobNorm", on_raw = FALSE, gamma.0 = 0.1){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   X.0 <- as.matrix(dt)
   rownames(X.0) <- rownames(dt)
   tryCatch(
@@ -489,6 +802,9 @@ robNorm <- function(se, ain="log2", aout="RobNorm", gamma.0 = 0.1){
       norm_dt <- data.table::as.data.table(robnorm_res$norm.data)
       colnames(norm_dt) <- colnames(dt)
       rownames(norm_dt) <- rownames(dt)
+      if(on_raw){
+        norm_dt <- log2(norm_dt)
+      }
       SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(norm_dt)
     },
     error = function(e){
@@ -500,46 +816,83 @@ robNorm <- function(se, ain="log2", aout="RobNorm", gamma.0 = 0.1){
 
 #' limma::removeBatchEffects (limBE)
 #'
-#' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default limBE)
+#' Log2-scaled data should be used as input (on_raw = FALSE).
 #'
-#' @return SummarizedExperiment containing the limBE normalized data as assay
+#' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
+#'
+#' @return SummarizedExperiment containing the limBE normalized data as assay (on log2 scale)
 #' @export
 #'
-limmaNorm <- function(se, ain = "log2", aout = "limBE"){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- limmaNorm(se, ain = "log2", aout = "limBE", on_raw = FALSE)
+#'
+limmaNorm <- function(se, ain = "log2", aout = "limBE", on_raw = FALSE){
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
+  }
   coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
   batch <- S4Vectors::metadata(se)$batch
   batch_vector <- coldata[[batch]]
   dt_batch <- limma::removeBatchEffect(dt, batch = batch_vector)
+  if(on_raw){
+    dt_batch <- log2(dt_batch)
+  }
   SummarizedExperiment::assay(se, aout, FALSE) <- data.table::as.data.table(dt_batch)
   return(se)
 }
 
 #' Normics Normalization (Normics using VSN or using Median)
 #'
+#' Log2-scaled data should be used as input (on_raw = FALSE).
+#'
 #' @param se SummarizedExperiment containing all necessary information of the proteomic dataset
-#' @param ain String which assay should be used as input (default log2)
-#' @param aout String which assay should be used to save normalized data (default limBE)
+#' @param ain String which assay should be used as input
+#' @param aout String which assay should be used to save normalized data
 #' @param method String specifying the method to use (NORMICS or NORMICSmedian)
+#' @param on_raw Boolean specifying whether normalization should be performed on raw or log2-scaled data
 #' @param reduce_correlation_by If the data is too big for the computation of the params, increase this parameter by 2,3,4.... The whole data will still be normalized, but the params are calculated on every second row etc.
 #' @param NormicsVSN_quantile The quantile that is used for the resistant least trimmed sum of squares regression. A value of 0.8 means focusing on the central 80\% of the data, reducing the influence of outliers.
 #' @param TMT_ratio Indicates if the data involves Tandem Mass Tag (TMT) ratio-based measurements (common in proteomics). If TRUE, the method may handle the data differently.
 #' @param top_x Number of reference proteins extracted for the calculation of parameters
 #'
-#' @return SummarizedExperiment containing the NormicsVSN/NormicsMedian normalized data as assay
+#' @return SummarizedExperiment containing the NormicsVSN/NormicsMedian normalized data as assay (on log2 scale)
 #' @export
 #'
-normicsNorm <- function(se, ain = "log2", aout = "NormicsVSN", method = "NormicsVSN", reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, TMT_ratio = FALSE, top_x = 50){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- normicsNorm(se, ain = "raw", aout = "NormicsVSN",
+#'                      method = "NormicsVSN", on_raw = TRUE)
+#'
+#'
+normicsNorm <- function(se, ain = "raw", aout = "NormicsVSN", method = "NormicsVSN", on_raw = TRUE, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, TMT_ratio = FALSE, top_x = 50){
   # check method
   stopifnot(method %in% c("NormicsVSN", "NormicsMedian"))
   dt <- data.table::as.data.table(SummarizedExperiment::assays(se)[[ain]])
   coldata <- data.table::as.data.table(SummarizedExperiment::colData(se))
   rowdata <- data.table::as.data.table(SummarizedExperiment::rowData(se))
-  # normalize on raw data not log2
-  if(ain != "raw"){
-    dt <- 2 ** dt
+  # check if ain is not raw but normalization should be performed on raw data
+  if(on_raw & ain != "raw"){
+    if(ain == "log2"){
+      warning("Log2 data specified as ain but on_raw is set to TRUE. On_raw=TRUE forces data to be transformed to raw-scale.")
+    }
+    dt <- 2^dt
+  }
+  if(ain == "raw" & on_raw == FALSE){
+    warning("Raw data specified as ain but on_raw is set to FALSE. On_raw=FALSE forces data to be transformed to log2-scale.")
+    dt <- log2(dt)
   }
   dt_reduced <- dt[seq(1, nrow(dt), by = reduce_correlation_by), ]
   rowdata_reduced <- rowdata[seq(1, nrow(rowdata), by = reduce_correlation_by), ]
@@ -614,7 +967,9 @@ normicsNorm <- function(se, ain = "log2", aout = "NormicsVSN", method = "Normics
       norm_dt[, j] <- dt[, j] / ri * mean(as.numeric(ratios[1, ]), na.rm = TRUE)
     }
     # apply log2 transformation
-    norm_dt <- log2(norm_dt)
+    if(on_raw){
+      norm_dt <- log2(norm_dt)
+    }
     norm_dt <- tibToDF(norm_dt, colnames(norm_dt), rownames(norm_dt))
   }
   SummarizedExperiment::assay(se, aout, FALSE) <- norm_dt
@@ -626,7 +981,7 @@ normicsNorm <- function(se, ain = "log2", aout = "NormicsVSN", method = "Normics
 
 #' Function to return available normalization methods' identifier names
 #'
-#' @return vector of normalization methods
+#' @return Vector of normalization methods
 #' @export
 #'
 get_normalization_methods <- function(){
@@ -647,6 +1002,12 @@ get_normalization_methods <- function(){
 #'
 #' @return SummarizedExperiment object with normalized data saved as assays
 #' @export
+#'
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- normalize_se_single(se, methods = c("RobNorm", "Median", "NormicsVSN",
+#'          "VSN"), gamma.0 = 0.5, reduce_correlation_by = 1,
+#'          NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9)
 #'
 normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9){
   # vector with available normalization methods
@@ -717,14 +1078,21 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5, reduce_correl
 #' @return SummarizedExperiment object with normalized data saved as assays
 #' @export
 #'
- normalize_se_combination <- function(se, methods, ains, combination_pattern = "_on_", gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9){
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- normalize_se_combination(se, methods = c("Median",
+#'          "NormicsVSN"), ains = c("IRS"), combination_pattern = "_on_",
+#'          gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8,
+#'          top_x = 50, VSN_quantile = 0.9)
+#'
+normalize_se_combination <- function(se, methods, ains, combination_pattern = "_on_", gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9){
 
   # vector with available normalization methods
   norm_functions <- norm_functions <- list(globalMeanNorm, globalMedianNorm, medianNorm, meanNorm, irsNorm,
                                            quantileNorm, vsnNorm, loessFNorm, loessCycNorm, rlrNorm,
-                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, normicsNorm, normicsNorm)
+                                           rlrMANorm, rlrMACycNorm, eigenMSNorm, medianAbsDevNorm, robNorm, tmmNorm, normicsNorm, normicsNorm, limmaNorm)
   norm_names <- c("GlobalMean","GlobalMedian", "Median", "Mean", "IRS", "Quantile", "VSN",
-                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "NormicsVSN", "NormicsMedian")
+                  "LoessF", "LoessCyc", "RLR", "RlrMA", "RlrMACyc", "EigenMS", "MAD", "RobNorm", "TMM", "NormicsVSN", "NormicsMedian", "limBE")
   names(norm_functions) <- norm_names
 
   # retrieve normalization methods & check if all methods available
@@ -755,7 +1123,7 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5, reduce_correl
       } else if(method %in% c("NormicsVSN", "NormicsMedian")){
         se <- func(se, ain = ain, aout = aout, method = method, reduce_correlation_by = reduce_correlation_by, NormicsVSN_quantile = NormicsVSN_quantile, top_x = top_x)
       } else if(method == "VSN"){
-        se <- func(se, ain = ain, aout = aout, VSN_quantile = VSN_quantile)
+        se <- func(se, ain = ain,aout = aout, VSN_quantile = VSN_quantile)
       } else {
         se <- func(se, ain = ain, aout = aout)
       }
@@ -779,6 +1147,14 @@ normalize_se_single <- function(se, methods = NULL, gamma.0 = 0.5, reduce_correl
 #'
 #' @return SummarizedExperiment object with normalized data saved as assays
 #' @export
+#'
+#' @examples
+#' data(PRONE_example_real_se)
+#' se <- normalize_se(se, methods = c("IRS_on_GlobalMedian", "IRS_on_Median",
+#'            "limBE_on_NormicsVSN"), combination_pattern = "_on_",
+#'            gamma.0 = 0.5, reduce_correlation_by = 1,
+#'            NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9)
+#'
 normalize_se <- function(se, methods, combination_pattern = "_on_", gamma.0 = 0.5, reduce_correlation_by = 1, NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9){
   # extract combination of methods
   if(!is.null(combination_pattern)){

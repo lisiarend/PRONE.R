@@ -4,14 +4,16 @@
 \alias{robNorm}
 \title{RobNorm}
 \usage{
-robNorm(se, ain = "log2", aout = "RobNorm", gamma.0 = 0.1)
+robNorm(se, ain = "log2", aout = "RobNorm", on_raw = FALSE, gamma.0 = 0.1)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default robNorm)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 
 \item{gamma.0}{Numeric representing the exponent of the weighted density. When the sample size
 is small, the fitted population of some proteins could be locally trapped such
@@ -20,8 +22,13 @@ this, a small gamma is recommended. When sample size smaller than 40, then set
 gamma to 0.5 or 0.1.}
 }
 \value{
-SummarizedExperiment containing the robNorm normalized data as assay
+SummarizedExperiment containing the RobNorm normalized data as assay (on log2 scale)
 }
 \description{
-RobNorm
+Log2-scaled data should be used as input (on_raw = FALSE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- robNorm(se, ain = "log2", aout = "RobNorm", on_raw = FALSE, gamma.0 = 0.1)
+
 }

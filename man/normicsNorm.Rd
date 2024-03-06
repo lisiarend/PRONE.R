@@ -6,9 +6,10 @@
 \usage{
 normicsNorm(
   se,
-  ain = "log2",
+  ain = "raw",
   aout = "NormicsVSN",
   method = "NormicsVSN",
+  on_raw = TRUE,
   reduce_correlation_by = 1,
   NormicsVSN_quantile = 0.8,
   TMT_ratio = FALSE,
@@ -18,11 +19,13 @@ normicsNorm(
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default limBE)}
+\item{aout}{String which assay should be used to save normalized data}
 
 \item{method}{String specifying the method to use (NORMICS or NORMICSmedian)}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 
 \item{reduce_correlation_by}{If the data is too big for the computation of the params, increase this parameter by 2,3,4.... The whole data will still be normalized, but the params are calculated on every second row etc.}
 
@@ -33,8 +36,15 @@ normicsNorm(
 \item{top_x}{Number of reference proteins extracted for the calculation of parameters}
 }
 \value{
-SummarizedExperiment containing the NormicsVSN/NormicsMedian normalized data as assay
+SummarizedExperiment containing the NormicsVSN/NormicsMedian normalized data as assay (on log2 scale)
 }
 \description{
-Normics Normalization (Normics using VSN or using Median)
+Log2-scaled data should be used as input (on_raw = FALSE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- normicsNorm(se, ain = "raw", aout = "NormicsVSN",
+                     method = "NormicsVSN", on_raw = TRUE)
+
+
 }

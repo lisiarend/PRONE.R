@@ -2,22 +2,28 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{rlrNorm}
 \alias{rlrNorm}
-\title{Robust Linear Regression Normalization of NormalyzerDE (uses median values over all samples as reference
-sample to which all the other samples in the data are normalized to)}
+\title{Robust Linear Regression Normalization of NormalyzerDE.}
 \usage{
-rlrNorm(se, ain = "log2", aout = "Rlr")
+rlrNorm(se, ain = "log2", aout = "Rlr", on_raw = FALSE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default rlr)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the rlr normalized data as assay
+SummarizedExperiment containing the rlr normalized data as assay (on log2 scale)
 }
 \description{
-Robust Linear Regression Normalization of NormalyzerDE (uses median values over all samples as reference
-sample to which all the other samples in the data are normalized to)
+Uses median values over all samples as reference
+sample to which all the other samples in the data are normalized to. Log2 data should be taken as input (on_raw = FALSE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- rlrNorm(se, ain = "log2", aout = "Rlr", on_raw = FALSE)
+
 }

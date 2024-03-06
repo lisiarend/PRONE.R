@@ -2,26 +2,37 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{rlrMACycNorm}
 \alias{rlrMACycNorm}
-\title{Cyclic Linear Regression Normalization on MA Transformed Data (no reference, but MA transformation and normalization
-of samples done pairwise between two samples, A = average of two samples, M = difference, process iterated through all samples pairs).}
+\title{Cyclic Linear Regression Normalization on MA Transformed Data}
 \usage{
-rlrMACycNorm(se, ain = "log2", aout = "RlrMACyc", iterations = 3)
+rlrMACycNorm(
+  se,
+  ain = "log2",
+  aout = "RlrMACyc",
+  on_raw = FALSE,
+  iterations = 3
+)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default rlrMACyc)}
+\item{aout}{String which assay should be used to save normalized data}
 
-\item{iterations}{Number of cyclic iterations to be performed (default 3)}
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
+
+\item{iterations}{Number of cyclic iterations to be performed}
 }
 \value{
-SummarizedExperiment containing the rlrMACyc normalized data as assay
-
-SummarizedExperiment containing the rlrMACyc normalized data as assay
+SummarizedExperiment containing the RlrMACyc normalized data as assay (on log2 scale)
 }
 \description{
-Cyclic Linear Regression Normalization on MA Transformed Data (no reference, but MA transformation and normalization
-of samples done pairwise between two samples, A = average of two samples, M = difference, process iterated through all samples pairs).
+No reference, but MA transformation and normalization
+of samples is done pairwise between two samples with A = average of two samples and M = difference. The process is iterated through all samples pairs.
+Log2 data should be taken as input (on_raw = FALSE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- rlrMACycNorm(se, ain = "log2", aout = "RlrMACyc", on_raw = FALSE, iterations=3)
+
 }

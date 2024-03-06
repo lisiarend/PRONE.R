@@ -2,28 +2,40 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{globalIntNorm}
 \alias{globalIntNorm}
-\title{Total Intensity Normalization
-Intensities of each variable in a sample are divided with the sum of intensities
-of all variables in the sample and multiplied with the median or mean of sum of intensities
-of all variables in all samples. Raw data is taken as input (not log2).}
+\title{Total Intensity Normalization}
 \usage{
-globalIntNorm(se, ain = "raw", aout = "GlobalMedian", type = "median")
+globalIntNorm(
+  se,
+  ain = "raw",
+  aout = "GlobalMedian",
+  type = "median",
+  on_raw = TRUE
+)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomics data set}
 
-\item{ain}{String which assay should be used as input (default raw)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default TotalInt_mean or TotalInt_median)}
+\item{aout}{String which assay should be used to save normalized data}
 
 \item{type}{String whether to use median or mean to calculate the scaling factor}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the total intensity normalized data as assay
+SummarizedExperiment containing the total intensity normalized data as assay (on log2 scale)
 }
 \description{
-Total Intensity Normalization
 Intensities of each variable in a sample are divided with the sum of intensities
 of all variables in the sample and multiplied with the median or mean of sum of intensities
-of all variables in all samples. Raw data is taken as input (not log2).
+of all variables in all samples. Raw data should be taken as input (on_raw = TRUE).
+}
+\examples{
+data(PRONE_example_real_se)
+PRONE_example_real_se <- globalIntNorm(se, ain = "raw",
+                                           aout = "GlobalMedian",
+                                           type = "median",
+                                           on_raw = TRUE)
+
 }

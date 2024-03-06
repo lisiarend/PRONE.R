@@ -2,24 +2,28 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{quantileNorm}
 \alias{quantileNorm}
-\title{Quantile Normalization of preprocessCore package.
-Forces distributions of the samples to be the same on the basis of the quantiles of the samples by replacing
-each protein of a sample with the mean of the corresponding quantile.}
+\title{Quantile Normalization of preprocessCore package.}
 \usage{
-quantileNorm(se, ain = "log2", aout = "Quantile")
+quantileNorm(se, ain = "log2", aout = "Quantile", on_raw = FALSE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default quantile)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the quantile normalized data as assay
+SummarizedExperiment containing the quantile normalized data as assay (on log2 scale)
 }
 \description{
-Quantile Normalization of preprocessCore package.
 Forces distributions of the samples to be the same on the basis of the quantiles of the samples by replacing
-each protein of a sample with the mean of the corresponding quantile.
+each protein of a sample with the mean of the corresponding quantile. Log2-scaled data should be taken as input (on_raw = FALSE)
+}
+\examples{
+data(PRONE_example_real_se)
+se <- quantileNorm(se, ain = "log2", aout = "Quantile", on_raw = FALSE)
+
 }

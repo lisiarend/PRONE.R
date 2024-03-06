@@ -4,18 +4,25 @@
 \alias{eigenMSNorm}
 \title{EigenMS Normalization}
 \usage{
-eigenMSNorm(se, ain = "log2", aout = "EigenMS")
+eigenMSNorm(se, ain = "log2", aout = "EigenMS", on_raw = FALSE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default eigenMS)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the EigenMS normalized data as assay
+SummarizedExperiment containing the EigenMS normalized data as assay (on log2 scale)
 }
 \description{
-EigenMS Normalization
+Log2-scaled data should be used as input (on_raw = FALSE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- eigenMSNorm(se, ain = "log2", aout = "EigenMS", on_raw = FALSE)
+
 }

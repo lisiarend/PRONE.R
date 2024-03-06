@@ -2,24 +2,27 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{irsNorm}
 \alias{irsNorm}
-\title{Internal Reference Scaling Normalization
-IRS makes different measurements of the same thing all exactly the same and puts
-all of the intensities on the same scale.}
+\title{Internal Reference Scaling Normalization}
 \usage{
-irsNorm(se, ain = "raw", aout = "IRS")
+irsNorm(se, ain = "raw", aout = "IRS", on_raw = TRUE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default raw)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default IRS)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the IRS normalized data as assay
+SummarizedExperiment containing the IRS normalized data as assay (on log2 scale)
 }
 \description{
-Internal Reference Scaling Normalization
 IRS makes different measurements of the same thing all exactly the same and puts
-all of the intensities on the same scale.
+all of the intensities on the same scale. Raw data should be taken as input (on_raw = TRUE)
+}
+\examples{
+data(PRONE_example_real_se)
+se <- irsNorm(se, ain = "raw", aout = "IRS", on_raw = TRUE)
 }

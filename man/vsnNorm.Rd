@@ -2,22 +2,29 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{vsnNorm}
 \alias{vsnNorm}
-\title{Variance Stabilization Normalization of limma package}
+\title{Variance Stabilization Normalization of limma package.}
 \usage{
-vsnNorm(se, ain = "raw", aout = "VSN", VSN_quantile = 0.9)
+vsnNorm(se, ain = "raw", aout = "VSN", on_raw = TRUE, VSN_quantile = 0.9)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default raw)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default vsn)}
+\item{aout}{String which assay should be used to save normalized data}
 
-\item{VSN_quantile}{Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression. (see vsn2 lts.quantile)}
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
+
+\item{VSN_quantile}{Numeric of length 1. The quantile that is used for the resistant least trimmed sum of squares regression (see vsn2 lts.quantile)}
 }
 \value{
-SummarizedExperiment containing the vsn normalized data as assay
+SummarizedExperiment containing the vsn normalized data as assay (on log2-scale)
 }
 \description{
-Variance Stabilization Normalization of limma package
+Raw data should be taken as input (on_raw = TRUE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- vsnNorm(se, ain = "raw", aout = "VSN", on_raw = TRUE, VSN_quantile = 0.9)
+
 }

@@ -7,7 +7,7 @@
 get_normalization_methods()
 }
 \value{
-vector of normalization methods
+Vector of normalization methods
 }
 \description{
 Function to return available normalization methods' identifier names

@@ -38,3 +38,11 @@ SummarizedExperiment object with normalized data saved as assays
 \description{
 Normalize SummarizedExperiment object using single normalization methods or specified combinations of normalization methods
 }
+\examples{
+data(PRONE_example_real_se)
+se <- normalize_se(se, methods = c("IRS_on_GlobalMedian", "IRS_on_Median",
+           "limBE_on_NormicsVSN"), combination_pattern = "_on_",
+           gamma.0 = 0.5, reduce_correlation_by = 1,
+           NormicsVSN_quantile = 0.8, top_x = 50, VSN_quantile = 0.9)
+
+}

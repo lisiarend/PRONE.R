@@ -2,26 +2,29 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{medianNorm}
 \alias{medianNorm}
-\title{Median Normalization
-The intensity of each protein group in a given sample is divided by the median of the
-intensities of all protein groups in that sample and then multiplied by the mean of
-median of sum of intensities of all protein groups in all samples.}
+\title{Median Normalization}
 \usage{
-medianNorm(se, ain = "log2", aout = "Median")
+medianNorm(se, ain = "raw", aout = "Median", on_raw = TRUE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default log2)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default mean)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the median normalized data as assay
+SummarizedExperiment containing the median normalized data as assay (on log2 scale)
 }
 \description{
-Median Normalization
 The intensity of each protein group in a given sample is divided by the median of the
 intensities of all protein groups in that sample and then multiplied by the mean of
 median of sum of intensities of all protein groups in all samples.
+}
+\examples{
+data(PRONE_example_real_se)
+se <- medianNorm(se, ain = "raw", aout = "Median", on_raw = TRUE)
+
 }

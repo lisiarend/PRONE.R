@@ -2,20 +2,27 @@
 % Please edit documentation in R/NormalizationMethods.R
 \name{tmmNorm}
 \alias{tmmNorm}
-\title{Weighted Trimmed Mean of M Values (TMM) Normalization}
+\title{Weighted Trimmed Mean of M Values (TMM) Normalization of edgeR package.}
 \usage{
-tmmNorm(se, ain = "raw", aout = "TMM")
+tmmNorm(se, ain = "raw", aout = "TMM", on_raw = TRUE)
 }
 \arguments{
 \item{se}{SummarizedExperiment containing all necessary information of the proteomic dataset}
 
-\item{ain}{String which assay should be used as input (default raw)}
+\item{ain}{String which assay should be used as input}
 
-\item{aout}{String which assay should be used to save normalized data (default TMM)}
+\item{aout}{String which assay should be used to save normalized data}
+
+\item{on_raw}{Boolean specifying whether normalization should be performed on raw or log2-scaled data}
 }
 \value{
-SummarizedExperiment containing the TMM normalized data as assay
+SummarizedExperiment containing the TMM normalized data as assay (on log2 scale)
 }
 \description{
-Weighted Trimmed Mean of M Values (TMM) Normalization
+Raw data should be taken as input (on_raw = TRUE).
+}
+\examples{
+data(PRONE_example_real_se)
+se <- tmmNorm(se, ain = "raw", aout = "TMM", on_raw = TRUE)
+
 }
