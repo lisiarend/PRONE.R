@@ -21,9 +21,6 @@ plot_intersection_enrichment <- function(se, de_res, ain = NULL, comparisons = N
   de_res <- tmp[[1]]
   ain <- tmp[[2]]
   comparisons <- tmp[[3]]
-
-  # TODO: check sources
-
   # check top10
   stopifnot(is.numeric(top))
 
@@ -44,7 +41,7 @@ plot_intersection_enrichment <- function(se, de_res, ain = NULL, comparisons = N
       dt <- de_res[de_res$Comparison == comp,]
       # extract queries
       queries <- lapply(ain, function(method){
-        dt <- de_res[de_res$Assay == method,]
+        dt <- dt[dt$Assay == method,]
         query <- dt[[id_column]]
         query <- unique(query[query != ""])
         query
@@ -58,7 +55,7 @@ plot_intersection_enrichment <- function(se, de_res, ain = NULL, comparisons = N
       # extract top
       top_go <- NULL
       for(method in ain){
-        dt <- gres[gres$query == ain,]
+        dt <- gres[gres$query == method,]
         dt <- dt %>% dplyr::arrange(p_value) %>% dplyr::group_by(source) %>% dplyr::slice(1:top)
         dt <- dt[, c("query", "term_name", "source")]
         if(is.null(top_go)){
@@ -70,7 +67,7 @@ plot_intersection_enrichment <- function(se, de_res, ain = NULL, comparisons = N
       top_go$present <- TRUE
       dt <- data.table::dcast(top_go, ...~query, value.var = "present")
       dt <- dt[order(dt$source),]
-      terms <- dt$term_name
+      terms <- paste0(dt$term_name, " (", dt$source, ")")
       source <- dt$source
       dt$term_name <- NULL
       dt$source <- NULL
@@ -80,11 +77,10 @@ plot_intersection_enrichment <- function(se, de_res, ain = NULL, comparisons = N
       dt[is.na(dt)] <- "No"
       dt$Term <- rownames(dt)
       melted_dt <- data.table::melt(data.table::as.data.table(dt), value.name = "Present", variable.name = "Assay", measure.vars = colnames(dt)[colnames(dt) != "Term"])
-
       # plot
       p <- ggplot2::ggplot(melted_dt, ggplot2::aes(x = get("Assay"), y = get("Term"), fill = get("Present"))) +
         ggplot2::geom_tile(color = "white") +
-        ggplot2::scale_fill_manual(name = "Significant", values = c("grey80", "#D55E00")) +
+        ggplot2::scale_fill_manual(name = "Significant", values = c("No" = "grey80", "Yes" = "#D55E00")) +
         ggplot2::labs(x = "Normalization Method", y = "Terms") +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5))
       plots[[comp]] <- p
